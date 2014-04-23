@@ -1,0 +1,11 @@
+*.DS_Store
+bin/*
+build/*
+CMakeFiles/*
+*.config
+*.creator*
+*.files
+*.includes
+*.user
+lib/*
+*~

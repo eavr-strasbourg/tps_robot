@@ -1,0 +1,19 @@
+<!-- Launch file for Scara 4-DOF simulator -->
+<launch>
+<!-- Robot name as in controller -->
+<param name="robotName" value="scara" />
+<param name="robot_description" textfile="$(find tpRobots)/urdf/scara.urdf" />
+
+<!-- Tell the joint state publisher to listen for /robot/command/sim -->
+<rosparam param="/source_list">[/jointControl/position] </rosparam>
+
+<!-- Simulator node -->
+	<param name="use_gui" value="True"/>
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true" />
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find tpRobots)/launch/config.rviz" />
+	
+<!-- Bridge node to transform high-level position and velocity commands to low-level position setpoints -->
+<node name="jointControl" pkg="tpRobots" type="arm_bridge.py" />
+
+</launch>

@@ -1,0 +1,11 @@
+<!-- Launch file for 4 points simulator -->
+<launch>
+
+<!-- Parameters -->
+<param name="Ts" value="2" />
+<param name="Kp" value="2" />
+
+<!-- Nodes -->
+<node name="Simulator" pkg="tpRobots" type="simu4Points"></node>
+<node name="SetpointGenerator" pkg="tpRobots" type="setpoint4Points.py" />
+</launch>

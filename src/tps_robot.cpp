@@ -1,5 +1,5 @@
 
-#include <tpRobots/tpRobot.h>
+#include <tps_robot/tps_robot.h>
 #include <urdf/model.h>
 #include <algorithm>
 
@@ -46,18 +46,9 @@ tpRobot::tpRobot(ros::NodeHandle &mainNode)
     }
 
     // initialise ROS topics: publisher for command, subscriber for position measurement
-    commandPub = mainNode.advertise<sensor_msgs::JointState>("/mainControl/command", 1000);
+    commandPub = mainNode.advertise<sensor_msgs::JointState>("/main_control/command", 1000);
     positionSub = mainNode.subscribe("/joint_states", 1000, &tpRobot::rosReadPosition, this);
-    tfListener = NULL;
     ros::spinOnce();
-}
-
-// initialize tf listener and base and end links
-void tpRobot::initTF(tf::TransformListener &listener, const std::string & base_link, const std::string & end_effector)
-{
-    tfListener = &listener;
-    tfBase = base_link;
-    tfEnd = end_effector;
 }
 
 // read joint_state topic and write articular position
@@ -71,26 +62,6 @@ void tpRobot::rosReadPosition(const sensor_msgs::JointState::ConstPtr& msg)
                 q[i] = msg->position[j];
         }
 
-    // also read tf
-    if(tfListener != NULL)
-    {
-        try{
-            tfListener->lookupTransform(tfBase, tfEnd, ros::Time(0), transform);
-            tfP[0] = transform.getOrigin().x();
-            tfP[1] = transform.getOrigin().y();
-            tfP[2] = transform.getOrigin().z();
-            Rq.set(transform.getRotation().x(), transform.getRotation().y(), transform.getRotation().z(), transform.getRotation().w());
-            tfR.buildFrom(Rq);
-            Rxyz.buildFrom(tfR);
-            tfP[3] = Rxyz[0];
-            tfP[4] = Rxyz[1];
-            tfP[5] = Rxyz[2];
-        }
-        catch (tf::TransformException ex){    }
-    }
-
-    // if(rosVerbose)
-    //     std::cout << "tpRobot - Read position from robot : " << q.t() << std::endl;
 }
 
 

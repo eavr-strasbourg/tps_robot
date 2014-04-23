@@ -7,24 +7,23 @@ Author: Olivier Kermorgant
 Bridge to control arm position and velocity 
 
 Subscribes:
-- robot position or velocity command on topic /mainControl/command
+- robot position or velocity command on topic /main_control/command
 
 Publishes:
-- robot joint positions commands on topic /jointControl/command for rviz or ViSP (position control)
-- JointTrajectoryAction for gazebo (position setpoint for torque control)
+- robot joint positions commands on topic /joint_control/command (position control)
 '''
 
 # modules
 # ROS stuff and multithreading
-import roslib;
+import roslib
 import rospy,time,threading
 from sensor_msgs.msg import JointState
+# math
 from pylab import arange, sign
-
+# system
 import sys,os
-from optparse import OptionParser
 
-roslib.load_manifest('tpRobots')
+roslib.load_manifest('tps_robot')
 
 verbose = True
 
@@ -61,7 +60,7 @@ for ui in urdf:
                 jName = ui.split('"')[1]
                 inJoint = True
 
-# update max velocity according to T
+# update max velocity according to sample time T
 jointVelMax = [T*v for v in jointVelMax]
 
 print "Initializing bridge with " + str(N) + " joints"
@@ -86,19 +85,19 @@ class State:
 		while not rospy.is_shutdown():
 			if self.msgPrint != msg:
 				msg = self.msgPrint
-				if type(msg) == str:
+				if type(msg) == str:	# if msg is a string, print it
 					print msg
-				else:
+				else:			# otherwise msg should be a list of values
 					print ''.join([str(m) for m in msg])
 			time.sleep(T)
 			
 
 	def followPosition(self, qDes, cmdCountCur):
 		'''
-		Follows the joint position as long as :
+		Follows the joint position setpoint as long as :
 		- the corresponding position lies inside the joint limits
 		- no other command has been received
-		    '''
+		'''
 		# build trajectory to go from qSet to qDes with max velocity
 		qTraj = [list(arange(self.qSet[i],qDes[i],sign(qDes[i]-self.qSet[i])*jointVelMax[i])[1:]) for i in xrange(N)]
 		for i in xrange(N):
@@ -120,7 +119,7 @@ class State:
 
 	def followVelocity(self, qDot, cmdCountCur):
 		'''
-		Follows the joint velocity as long as :
+		Follows the joint velocity setpoint as long as :
 		- the corresponding position lies inside the joint limits
 		- no other command has been received
 		'''
@@ -170,13 +169,13 @@ if __name__ == '__main__':
 	state = State()
 	
 	# name of the node
-        rospy.init_node('jointControl')
+        rospy.init_node('joint_control')
 	
 	# subscribe to position and velocity command from main code
-        rospy.Subscriber('/mainControl/command', JointState, state.readBridgeCommand)
+        rospy.Subscriber('/main_control/command', JointState, state.readBridgeCommand)
 				
         # publish position command depending on the simulator type
-        cmdPub = rospy.Publisher('/jointControl/position', JointState)
+        cmdPub = rospy.Publisher('/joint_control/position', JointState)
 	# create JointState object - used in rviz / ViSP
 	jointState = JointState()
 	jointState.position = [0.]*N
@@ -203,8 +202,8 @@ if __name__ == '__main__':
                         silentCount = 0
                         state.cmdCount = 0
                         oldCount = 0
-                        print 'Stopping publication'
+                        print 'Pausing publication'
 
-		# should not do any other stuff
+		# should not do any other thing
 		#print 'listening for new command'
 		rospy.sleep(T)

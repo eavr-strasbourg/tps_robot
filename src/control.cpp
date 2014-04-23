@@ -1,5 +1,5 @@
 
-#include <tpRobots/tpRobot.h>
+#include <tps_robot/tps_robot.h>
 #include <ros/ros.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <visp/vpHomogeneousMatrix.h>
@@ -69,7 +69,7 @@ int calcMGI(const vpColVector &qi, const vpColVector &pd, vpColVector &q, const 
 int main(int argc, char ** argv)
 {
     // initialisation du node ROS
-    ros::init(argc, argv, "Main_control");
+    ros::init(argc, argv, "main_control");
     ros::start();
     ros::NodeHandle rosNH;
     const double rate = 30;
@@ -78,10 +78,6 @@ int main(int argc, char ** argv)
     // initialisation de la classe robot
     tpRobot robot(rosNH);
     const unsigned int N = robot.getDOFs();
-
-    // initialisation d'un subscriber pour la vraie position (X Y Z R P Y)
-    tf::TransformListener tfListener;
-    robot.initTF(tfListener);
 
     // param = which task
     int task = 0;
@@ -151,10 +147,6 @@ int main(int argc, char ** argv)
         // lecture des positions articulaires
         robot.getPosition(q);
         cout << "Lecture positions articulaires : " << q.t() << endl;
-        // lecture des vraies positions operationnelles
-        robot.getTF(p_true);
-        cout << "Vraie position operationnelle : " << p_true.t() << endl;
-
 
         // *** Modifier ici pour generer une commande en position (qCommand) ou en vitesse (vCommand)
 

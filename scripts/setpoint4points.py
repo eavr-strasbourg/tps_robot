@@ -15,11 +15,11 @@ Publishes:
 '''
  
  # ROS stuff and multithreading
-import roslib; roslib.load_manifest('tpRobots')
+import roslib; roslib.load_manifest('tps_robot')
 import rospy,time,threading
 from std_msgs.msg import Float32MultiArray
 
-rospy.init_node('SetpointGenerator')
+rospy.init_node('setpoint_generator')
 
 # setpoint-level sampling time
 Te = .1

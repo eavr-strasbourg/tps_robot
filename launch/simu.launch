@@ -6,6 +6,6 @@
 <param name="Kp" value="2" />
 
 <!-- Nodes -->
-<node name="Simulator" pkg="tpRobots" type="simu4Points"></node>
-<node name="SetpointGenerator" pkg="tpRobots" type="setpoint4Points.py" />
+<node name="simulator" pkg="tps_robot" type="simu4points"></node>
+<node name="setpoint_generator" pkg="tps_robot" type="setpoint4points.py" />
 </launch>

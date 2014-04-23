@@ -6,7 +6,6 @@
 #include <visp/vpRxyzVector.h>
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
-#include <tf/transform_listener.h>
 #include <string>
 
 /*
@@ -33,10 +32,6 @@ public:
     // set articular velocity
     void setVelocity(vpColVector velocity);
 
-    // get true transform
-    void initTF(tf::TransformListener &listener, const std::string & base_link = "base_link", const std::string & end_effector = "end_effector");
-    inline void getTF(vpColVector& position) {position = tfP;}
-
     // stop motion
     inline void stopMotion() {setPosition(q);}
 
@@ -56,8 +51,6 @@ protected:
     vpRotationMatrix tfR;
     vpQuaternionVector Rq;
     vpRxyzVector Rxyz;
-    tf::TransformListener* tfListener;
-    tf::StampedTransform transform;
 
     ros::NodeHandle* rosNH;
 

@@ -1,0 +1,14 @@
+#FIG 3.2  Produced by xfig version 3.2.5-alpha5
+Portrait
+Center
+Metric
+A4      
+100.00
+Single
+-2
+1200 2
+2 1 1 1 0 7 0 0 -1 4.000 0 0 -1 0 0 2
+	 2790 8925 2790 198
+2 1 1 1 0 7 0 0 -1 4.000 0 0 -1 0 0 2
+	 2322 5085 7868 5085
+4 0 0 0 0 0 18 0.0000 2 270 30375 5805 7830 \\begin{tabular}[c]{|c||c|c|c|}\\hline articulation $i$ & $1$ & $2$ & $3$  \\\\\\hline\\hline$\\sigma_i$ &     &     &    \\\\\\hline$\\alpha_{i-1}$ &     &  &  \\\\\\hline$a_{i-1}$ &  &  & \\\\\\hline$\\theta_i$ &  &  & \\\\\\hline$r_i$ &  &  &  \\\\\\hline $q_i$ figure & & & \\\\\\hline\\end{tabular}\001

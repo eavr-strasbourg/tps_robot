@@ -34,4 +34,6 @@ with open(os.path.expanduser('~/.bashrc'), 'r+') as f:
 		print '.bashrc has been updated - launch a new console'
 	else:
 		print 'Nothing to do in .bashrc'
-			
+		
+		
+# Archive previous works

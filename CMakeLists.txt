@@ -52,5 +52,3 @@ target_link_libraries(simu4points ${PROJECT_NAME}  ${OpenCV_LIBS})
 add_executable(control src/control.cpp)
 target_link_libraries(control ${PROJECT_NAME})
 
-add_executable(soluce src/soluceTP.cpp)
-target_link_libraries(soluce ${PROJECT_NAME})

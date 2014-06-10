@@ -4,36 +4,49 @@
 Created on: 11 Oct 2013
 Author: Olivier Kermorgant
 
-Updates project files according to ROS version and environment changes
+Archive les anciens TP et nettoie les repertoires de compilation
 '''
 import os
-from commands import getoutput
-from sys import argv
+from roslaunch import substitution_args
+import shutil
 
+# Cherche le repertoire src
+path_src = substitution_args.resolve_args('$(find tps_robot)')
+path_src = '/'.join(path_src.split('/')[:-1]) + '/'
+path_devel = path_src.replace('/src/', '/devel/')
+path_build = path_src.replace('/src/', '/build/')
 
-# Changes to ~/.bashrc: add ViSP environment variables
-# Look for some files to get the path and set environment variable
-with open(os.path.expanduser('~/.bashrc'), 'r+') as f:
-	data = f.read()
-	updateF = False
-	data += '\n'
-	if 'VISP_SCENES_DIR' not in data:
-		thePath = os.path.dirname(getoutput("locate wireframe-simulator/camera.bnd").splitlines()[0])
-		data += 'export VISP_SCENES_DIR=' + thePath + '\n'
-		print 'Updating .bashrc for VISP_SCENES_DIR'
-		updateF = True
-	if 'VISP_ROBOT_ARMS_DIR' not in data:
-		thePath = os.path.dirname(getoutput("locate robot-simulator/viper850_arm1.bnd").splitlines()[0])
-		data += 'export VISP_ROBOT_ARMS_DIR=' + thePath + '\n'
-		print 'Updating .bashrc for VISP_ROBOT_ARMS_DIR'
-		updateF = True
-	if updateF:
-		f.seek(0)
-		f.truncate()
-		f.write(data)
-		print '.bashrc has been updated - launch a new console'
-	else:
-		print 'Nothing to do in .bashrc'
-		
-		
-# Archive previous works
+# Cree un repertoire d'archives
+path_arch = path_src.replace('/src/', '/src_archived/')
+if os.path.lexists(path_arch) == False:
+    os.mkdir(path_arch)
+
+# Cherche les anciens packages de TP et deplace vers les archives
+user_pkg = os.listdir(path_src)
+user_pkg = [pkg for pkg in user_pkg if pkg != 'tps_robot'] 
+
+for pkg in user_pkg:
+    goes_to_archive = False
+    if os.path.lexists(path_src + pkg + '/package.xml'):
+        with open(path_src + pkg + '/package.xml') as pkg_xml:
+            if 'tps_robot' in pkg_xml.read():
+                goes_to_archive = True
+    if goes_to_archive:
+        os.chdir(path_src)
+        try:
+            pkg_arch = shutil.make_archive(pkg, 'tar', path_src, pkg)
+            shutil.move(pkg_arch, path_arch)
+            shutil.rmtree(path_src+pkg)
+        except:
+            pass
+                
+# Nettoie le repertoire de build
+for elem in os.listdir(path_build):
+    if os.path.isdir(path_build + elem):
+        shutil.rmtree(path_build + elem)
+    else:
+        os.remove(path_build + elem)
+# Nettoie le repertoire de devel
+for elem in os.listdir(path_devel):
+    if os.path.isdir(path_devel + elem):
+        shutil.rmtree(path_devel + elem)

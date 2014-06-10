@@ -12,8 +12,8 @@ from platform import linux_distribution
 from commands import getoutput
 from subprocess import call
 from sys import argv
+import argparse
 
-ROS_VERSION = 'hydro'
 UBUNTU_VERSION = linux_distribution()[2]
 USER = os.getenv('SUDO_USER')
 DEBUT_CONFIG = '# --- Configuration ROS ---'
@@ -40,6 +40,14 @@ def user_call(cmd_line):
     '''
     print '   user:', cmd_line
     call('su -c %s -s /bin/sh %s' % (cmd_line, USER))
+    
+# Parse les options
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.description = "Configure l'environnement ROS sur une nouvelle machine"
+parser.add_argument('v', metavar='rosversion', type=str, nargs=1, help='Version de ROS (Hydro ou Indigo)', default='hydro')
+
+args = parser.parse_args()
+args.rosversion = args.rosversion.lower()
     
 # Installation de ROS
 print 'Ajout des depots ROS'
@@ -69,10 +77,10 @@ with open('.bashrc', 'r+') as f:
         pass
     # Construction nouvelle configuration
     data.append(DEBUT_CONFIG)
-    data.append('source /opt/ros/%s/setup.bash' % ROS_VERSION)
+    data.append('source /opt/ros/%s/setup.bash' % args.rosversion)
     data.append('source ~/ros/devel/setup.bash')
-    data.append('export VISP_ROBOT_ARMS_DIR=/opt/ros/%s/share/visp/data/' % ROS_VERSION)
-    data.append('export VISP_SCENES_DIR=/opt/ros/%s/share/visp/data/' % ROS_VERSION)
+    data.append('export VISP_ROBOT_ARMS_DIR=/opt/ros/%s/share/visp/data/' % args.rosversion)
+    data.append('export VISP_SCENES_DIR=/opt/ros/%s/share/visp/data/' % args.rosversion)
     data.append(FIN_CONFIG)
     
     # Ecriture
@@ -80,7 +88,7 @@ with open('.bashrc', 'r+') as f:
     f.write('\n'.join(data))
 root_call('chown %s .bashrc' % USER)
     
-user_call('source /opt/ros/%s/setup.bash' % ROS_VERSION)
+user_call('source /opt/ros/%s/setup.bash' % args.rosversion)
 
 
 print 'Configuration des dossiers'

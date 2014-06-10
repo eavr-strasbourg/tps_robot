@@ -125,7 +125,7 @@ Le but de son développement est de pouvoir mettre à disposition de chacun des 
 
 De façon assez logique, les logiciels utilisant ROS se présentent sous une forme élémentaire, le package. Sur un ordinateur donné, tous les packages de l'utilisateur sont situés dans le même dossier.
 
-Pour ce TP nous utilisons l'avant-dernière version de ROS : \emph{Fuerte}. La nouvelle version, \emph{Groovy}, change quelques outils graphiques. La version \emph{Hydro} venait de sortir au moment de la création du TP.
+Pour ce TP nous utilisons la derniere version de ROS : \emph{Hydro}. La nouvelle version, \emph{Indigo}, sera directement compatible avec le TP.
 
 \subsection{Préparation de l'environnement de travail}
 
@@ -135,26 +135,27 @@ Pour ce TP nous utilisons l'avant-dernière version de ROS : \emph{Fuerte}. La n
  \item Une fois connecté sur le PC, ouvrir une console\footnote{ L'utilisation de la console Unix est rappelée en Annexe \ref{anx:unix}} et aller dans le répertoire \texttt{\url{~}/ros\_workspace}.\\
  Il s'agit du répertoire de travail de ROS, tous les paquets de ce répertoire seront donc détectés automatiquement pour la compilation et l'exécution.
 Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
- \item Aller dans le répertoire \texttt{tpRobots} : 
+ \item Aller dans le répertoire \texttt{tps\_robot} : 
  \begin{itemize}
-  \item \texttt{cd tpRobots} (depuis \texttt{\url{~}/ros\_workspace})
-  \item ou plus simplement \texttt{roscd tpRobots} (depuis n'importe où)
+  \item \texttt{cd tps\_robot} (depuis \texttt{\url{~}/ros\_workspace})
+  \item ou plus simplement \texttt{roscd tps\_robot} (depuis n'importe où)
  \end{itemize}
  Ce package contient les simulateurs utilisés pour le TP. Pour le mettre à jour et initialiser l'environnement de la machine :
  \begin{itemize}
  \item \texttt{git pull}\footnote{git est un outil de contrôle de version, semblable à svn.}
- \item \texttt{rosrun tpRobots configure.py}
+ \item \texttt{rosrun tps\_robot configure.py}
  \end{itemize}
  Afficher ce répertoire dans le gestionnaire de fichiers afin de voir la structure typique d'un package ROS :
  \begin{itemize}
  \item Fichiers à personnaliser par l'utilisateur
  \begin{itemize}
- \item \texttt{manifest.xml} : indique les dépendances à d'autres packages ROS
+ \item \texttt{package.xml} : indique les dépendances à d'autres packages ROS
  \item \texttt{CMakeLists.txt} : indique les sources C++ à compiler
  \end{itemize} 
  \item Dossiers créés par l'utilisateur :
  \begin{itemize}
- \item \texttt{src} : fichiers source (ici en C++ et Python)
+ \item \texttt{scripts} : fichiers source Python
+ \item \texttt{src} : fichiers source C++
  \item \texttt{include} : headers des fichiers C++
  \item \texttt{launch} : contient les fichiers \emph{launchfile} qui automatisent l'exécution de plusieurs programmes à la fois
  \item \texttt{urdf} : contient les fichiers urdf (Universal Robot Description File), décrivant les modèles géométriques des robots
@@ -170,7 +171,7 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  \item Effacer les dossiers créés automatiquement puis compiler le package :
  \begin{itemize}
  \item \texttt{rm -rf bin build lib} 
- \item \texttt{rosmake tpRobots}
+ \item \texttt{rosmake tps\_robot}
  \end{itemize}
  \end{enumerate}
  
@@ -182,7 +183,7 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
 ROS intègre la complétion automatique. Pour exécuter un node, taper :
 \begin{itemize}
 \item \texttt{rosrun tp<tab>} : complète avec le nom du package
-\item \texttt{rosrun tpRobots <tab>} : indique les nodes disponibles
+\item \texttt{rosrun tps\_robot <tab>} : indique les nodes disponibles
 \end{itemize}
 La commande \texttt{rosrun} est juste un raccourci pour exécuter les programmes se trouvant dans un package ROS avec l'aide de l'autocomplétion. Cela permet de lancer des programmes se trouvant dans différents dossiers sans avoir besoin de naviguer dans le système de fichiers.
 
@@ -197,7 +198,7 @@ On reconnaît le fichier \texttt{configure.py} qui a été lancé au début pour
 Essayer d'exécuter chacun des programmes (dans une console différente) pour observer qu'ils attendent la présence d'un "master".
 Il s'agit du logiciel ROS chargé de mettre en relation les différents nodes : le lancer via la commande \texttt{roscore} (dans un nouveau terminal).
 Les deux nodes se lancent aussitôt.
-\item Dans une nouvelle console, exécuter \texttt{rxgraph}  pour observer la structure élémentaire de l'architecture ROS :
+\item Dans une nouvelle console, exécuter \texttt{rqt\_graph}  pour observer la structure élémentaire de l'architecture ROS :
 \begin{itemize}
 \item Les nodes se sont enregistrés sous les noms \texttt{/SetpointGenerator} et \texttt{/Main\_control} 
 \item Le premier envoie un message appelé \texttt{/setpoint} au second : ce canal de communication est appelé un \emph{topic}
@@ -223,10 +224,10 @@ Chaque node pouvant être codé, exécuté et compilé indépendamment, cela per
 \item On a pu voir que ROS disposait de nombreux outils en ligne de commande\footnote{ Ces outils sont résumés en Annexe \ref{sec:lignecomm}}.
 Pour pouvoir exploiter ces avantages dans le logiciel Qt Creator, il faut également le lancer depuis une console : \texttt{qtcreator}.
 Lors des prochaines séances il faudra également lancer Qt Creator via la console\footnote{ Attention notamment à l'ouverture automatique des \texttt{.cpp} dans Qt Creator : le logiciel ainsi lancé ne sera pas interfacé avec l'environnement ROS.}.
-Pour ouvrir le package tpRobots :
+Pour ouvrir le package tps\_robot :
 \begin{itemize}
-\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du package tpRobots
- \item Indiquer \texttt{tpRobots/build} comme répertoire de compilation
+\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du package tps\_robot
+ \item Indiquer \texttt{tps\_robot/build} comme répertoire de compilation
  \item Valider et exécuter CMake pour obtenir l'affichage des fichiers source
  \item Avec \texttt{File/Open file}, ouvrir également le fichier \texttt{src/setpoint4Points.py}
 \end{itemize}
@@ -248,10 +249,10 @@ Des outils en ligne de commande existent pour analyser les informations circulan
 \item \texttt{rostopic info <topic>} : donne des infos sur un topic (nodes publiant et souscrivant, type de message)
 \end{itemize}
 Vérifier la présence des autres topics publiés.
-\item Si le topic contient des valeurs numériques, ce qui est le cas des \texttt{Float32MultiArray}, \texttt{rxplot} peut en tracer la courbe temporelle : 
+\item Si le topic contient des valeurs numériques, ce qui est le cas des \texttt{Float32MultiArray}, \texttt{rqt\_plot} peut en tracer la courbe temporelle : 
 \begin{itemize}
-\item Commande : \texttt{rxplot <topic>/<attribut>[indice] -p <intervalle de temps>}
-\item Par exemple : \texttt{rxplot setpoint/data[0] -p 10}
+\item Commande : \texttt{rqt\_plot <topic>/<attribut>[indice] -p <intervalle de temps>}
+\item Par exemple : \texttt{rqt\_plot setpoint/data[0] -p 10}
 \end{itemize}
 \item Si le topic contient des images, un outil permet de les afficher. Vérifier que le topic \texttt{camera/image} contient des données de type \texttt{sensor\_msgs/Image} puis les afficher :
 \begin{itemize}
@@ -281,7 +282,7 @@ Pour un robot complexe il peut rapidement y avoir plusieurs nodes à exécuter e
 \item \texttt{roslaunch <package> <launchfile>} : exécute le launchfile
 \end{itemize}
 Quitter les nodes ainsi que le \texttt{roscore}.
-Ouvrir le fichier \texttt{tpRobots/launch/sim.launch} afin de constater qu'il initialise les deux paramètres \texttt{Ts} et \texttt{Kp} et qu'il lance les deux nodes \texttt{setpoint4Points.py} et \texttt{simu4Points}.
+Ouvrir le fichier \texttt{tps\_robot/launch/sim.launch} afin de constater qu'il initialise les deux paramètres \texttt{Ts} et \texttt{Kp} et qu'il lance les deux nodes \texttt{setpoint4Points.py} et \texttt{simu4Points}.
 L'exécuter et vérifier que la simulation fonctionne : \texttt{roslaunch} lance automatiquement le ROSmaster s'il n'est pas déjà actif.
 
 \subsection{Enregistrer et rejouer des données - rosbag}
@@ -301,7 +302,7 @@ Arrêter l'enregistrement après quelques dizaines de secondes, et quitter les d
 Relancer le ROSmaster. Avec \texttt{rxbag}, lancer la republication de \texttt{/setpoint}.
 Relancer le node \texttt{simu4Points} : noter qu'il suit la consigne alors que le node \texttt{setpoint4Points} n'est pas lancé. En effet les consignes enregistrées sont republiées sur le même topic. Le node ne s'intéresse pas à la source du topic, seulement à son contenu. 
 
-\item Noter que  \texttt{simu4Points} a recommencé à publier ses topics. Que se passe-t-il si avec \texttt{rxbag} on lance la publication parallèle d'un même topic, par exemple \texttt{/position}  ? Utiliser \texttt{rxplot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter).
+\item Noter que  \texttt{simu4Points} a recommencé à publier ses topics. Que se passe-t-il si avec \texttt{rxbag} on lance la publication parallèle d'un même topic, par exemple \texttt{/position}  ? Utiliser \texttt{rqt\_plot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter).
 \end{enumerate}
 
 \subsection*{Pour approfondir}
@@ -318,10 +319,10 @@ Des tutoriaux pour bien d'autres aspects de ROS sont disponibles en ligne
 La deuxième séance est consacrée à la modélisation du robot.
 Pour cela un package sera créé par le binôme. 
 \begin{enumerate}
- \item  Création d'un package personnel : retourner dans le répertoire \texttt{\url{~}/ros\_workspace}. On souhaite y créer un package qui sera dépendant de \texttt{tpRobots}
+ \item  Création d'un package personnel : retourner dans le répertoire \texttt{\url{~}/ros\_workspace}. On souhaite y créer un package qui sera dépendant de \texttt{tps\_robot}
   \begin{itemize}
-   \item Création du package : \texttt{roscreate-pkg \bin ~tpRobots}
-   \item Copier le fichier \texttt{tpRobots/src/control.cpp} dans le nouveau package
+   \item Création du package : \texttt{roscreate-pkg \bin ~tps\_robot}
+   \item Copier le fichier \texttt{tps\_robot/src/control.cpp} dans le nouveau package
    \item Modifier le fichier \texttt{\bin/CMakeLists.txt} pour indiquer à ROS de compiler la source : \\
    \texttt{rosbuild\_add\_executable(control control.cpp)}
   \end{itemize}
@@ -376,7 +377,7 @@ Une fois lancé, le node tel qu'il est ne fait qu'attendre la publication des po
   
 Compiler et lancer le simulateur : 
  \begin{itemize}
- \item \texttt{roslaunch tpRobots turret3.launch}
+ \item \texttt{roslaunch tps\_robot turret3.launch}
  \end{itemize}
  L'interface RViz apparaît avec un modèle 3D.
 RViz permet d'afficher la situation globale du robot. La fenêtre de gauche donne des informations sur les différents éléments (links) du robot.
@@ -414,7 +415,7 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  rosrun tf tf_echo base_link end_effector
 \end{verbatim}Valider ainsi le modèle géométrique inverse. 
 
-On pourra aussi créer un nouveau \emph{publisher} (Annexe \ref{sec:publish}) permettant d'afficher avec \texttt{rxplot} l'évolution de l'erreur opérationnelle.
+On pourra aussi créer un nouveau \emph{publisher} (Annexe \ref{sec:publish}) permettant d'afficher avec \texttt{rqt\_plot} l'évolution de l'erreur opérationnelle.
 
 \medskip\item[\textbf{\underline{Q7}}] En cochant la case ``Show Trail'' de l'effecteur sous RViz, commenter la trajectoire obtenue.
 
@@ -431,7 +432,7 @@ La deuxième séance porte sur l'exploitation du jacobien dans la commande. On s
  
  \medskip\item[\textbf{\underline{Q3}}] On souhaite toujours que le robot se déplace entre $X_1=(0.065,-0.02,.61)$ et $X_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.
 Programmer cette stratégie, en utilisant l'une ou l'autre des procédure de calcul de MGI.
- Vérifier avec  \texttt{tf} ou  \texttt{rxplot} que les points sont bien atteints.
+ Vérifier avec  \texttt{tf} ou  \texttt{rqt\_plot} que les points sont bien atteints.
  
  
  \medskip\item[\textbf{\underline{Q4}}] En cochant la case ``Show Trail'' de l'effecteur sous RViz, commenter la trajectoire obtenue.
@@ -466,7 +467,7 @@ On souhaite contrôler à la fois la position cartésienne de l'effecteur et l'a
 Pour le contrôleur on n'oubliera pas d'initialiser $N$ à 4.
 \item Valider le modèle géométrique avec le simulateur :
 \begin{itemize}
-\item \texttt{roslaunch tpRobots scara4.launch}
+\item \texttt{roslaunch tps\_robot scara4.launch}
 \end{itemize}
 \item 
 Comme en deuxième séance, utiliser le MGI pour osciller entre les positions $\tilde{P}_1=(0.3,0.1,0.2,0.4)$ et $\tilde{P}_2=(0.3,0.1,0.2,-0.4)$.
@@ -558,12 +559,12 @@ La valeur courante de la transformation entre l'effecteur et la base s'obtient p
 
 \subsection{Outils graphiques}
 \begin{itemize}
-\item \texttt{rxgraph} : affiche le graphe des nodes
- \item \texttt{rxplot <topic1/valeurs1, topic2/valeurs2> -p <period>} : affiche le tracé des valeurs publiées sur les topics sur une période glissante
+\item \texttt{rqt\_graph} : affiche le graphe des nodes
+ \item \texttt{rqt\_plot <topic1/valeurs1, topic2/valeurs2> -p <period>} : affiche le tracé des valeurs publiées sur les topics sur une période glissante
 \end{itemize}
 
 \subsection{Créer d'autres publishers (C++)}\label{sec:publish}
-Pour avoir accès à certains résultats il peut être utile de publier de nouvelles données au sein du contrôleur. Cela permet notamment de les afficher via \texttt{rxplot}.
+Pour avoir accès à certains résultats il peut être utile de publier de nouvelles données au sein du contrôleur. Cela permet notamment de les afficher via \texttt{rqt\_plot}.
 Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un publisher et un message sont instanciés :
 \begin{verbatim}
  ros::Publisher examplePub;
@@ -573,7 +574,7 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
  examplePub.publish(example);
 \end{verbatim}On peut alors afficher le graphe des variables publiées en temps réel :
 \begin{verbatim}
- rxplot /example/data[0],/example/data[1],/example/data[2] -p 10
+ rqt\_plot /example/data[0],/example/data[1],/example/data[2] -p 10
 \end{verbatim}
 
 
@@ -582,7 +583,7 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
 \begin{enumerate}
 \item Le simulateur et ses interfaces se lancent en exécutant un launchfile :
 \begin{itemize}
-\item \texttt{roslaunch tpRobots turret3.launch}
+\item \texttt{roslaunch tps\_robot turret3.launch}
 \end{itemize}
  Ce launchfile lance les nodes suivants :
 \begin{itemize}

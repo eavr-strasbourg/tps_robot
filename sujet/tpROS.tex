@@ -143,7 +143,7 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  Ce package contient les simulateurs utilisés pour le TP. Pour le mettre à jour et initialiser l'environnement de la machine :
  \begin{itemize}
  \item \texttt{git pull}\footnote{git est un outil de contrôle de version, semblable à svn.}
- \item \texttt{rosrun tps\_robot configure.py}
+ %\item \texttt{rosrun tps\_robot configure.py}
  \end{itemize}
  Afficher ce répertoire dans le gestionnaire de fichiers afin de voir la structure typique d'un package ROS :
  \begin{itemize}
@@ -168,10 +168,10 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  \end{itemize}
  \end{itemize}
  
- \item Effacer les dossiers créés automatiquement puis compiler le package :
+ \item Compiler le package :
  \begin{itemize}
- \item \texttt{rm -rf bin build lib} 
- \item \texttt{rosmake tps\_robot}
+ \item \texttt{roscd tps\_robot/..} 
+ \item \texttt{catkin\_make}
  \end{itemize}
  \end{enumerate}
  
@@ -200,7 +200,7 @@ Il s'agit du logiciel ROS chargé de mettre en relation les différents nodes : 
 Les deux nodes se lancent aussitôt.
 \item Dans une nouvelle console, exécuter \texttt{rqt\_graph}  pour observer la structure élémentaire de l'architecture ROS :
 \begin{itemize}
-\item Les nodes se sont enregistrés sous les noms \texttt{/SetpointGenerator} et \texttt{/Main\_control} 
+\item Les nodes se sont enregistrés sous les noms \texttt{/setpoint\_generator} et \texttt{/simulator} 
 \item Le premier envoie un message appelé \texttt{/setpoint} au second : ce canal de communication est appelé un \emph{topic}
 \end{itemize}
 Indépendamment du langage, utiliser ROS revient essentiellement à mettre en relation des programmes élémentaires qui souscrivent et publient chacun des informations sur différents topics.
@@ -226,10 +226,10 @@ Pour pouvoir exploiter ces avantages dans le logiciel Qt Creator, il faut égale
 Lors des prochaines séances il faudra également lancer Qt Creator via la console\footnote{ Attention notamment à l'ouverture automatique des \texttt{.cpp} dans Qt Creator : le logiciel ainsi lancé ne sera pas interfacé avec l'environnement ROS.}.
 Pour ouvrir le package tps\_robot :
 \begin{itemize}
-\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du package tps\_robot
- \item Indiquer \texttt{tps\_robot/build} comme répertoire de compilation
+\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du répertoire \texttt{ros\_workspace}
+ \item Indiquer \texttt{ros\_workspace/build} comme répertoire de compilation
  \item Valider et exécuter CMake pour obtenir l'affichage des fichiers source
- \item Avec \texttt{File/Open file}, ouvrir également le fichier \texttt{src/setpoint4Points.py}
+ \item Avec \texttt{File/Open file}, ouvrir également le fichier \texttt{script/setpoint4Points.py}
 \end{itemize}
 \item Parcourir les fichiers \texttt{simu4Points.cpp} et \texttt{setpoint4Points.py} pour y repérer les lignes propres à ROS : déclaration du nom du node, souscription et publication des topics. On voit apparaître la notion de message : il s'agit du type d'information que des nodes s'échangent sur un topic (vecteur, image, chaîne de caractère...). Ici le message \texttt{/setpoint} est un \texttt{Float32MultiArray}, soit un vecteur de float. De nombreux types de message existent déjà dans ROS, mais il est toujours possible de créer le sien pour une utilisation particulière.
 

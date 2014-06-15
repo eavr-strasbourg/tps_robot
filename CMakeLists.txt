@@ -19,7 +19,6 @@ find_library(VISP_LIBRARY NAMES visp HINTS ${VISP_LIBRARY_DIRS} )
 
 find_package(OpenCV REQUIRED)
 
-message("opencv: " ${OpenCV_LIBS})
 
 ###################################
 ## catkin specific configuration ##

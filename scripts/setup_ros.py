@@ -79,8 +79,8 @@ with open('.bashrc', 'r+') as f:
     data.append(DEBUT_CONFIG)
     data.append('source /opt/ros/%s/setup.bash' % args.rosversion)
     data.append('source ~/ros/devel/setup.bash')
-    data.append('export VISP_ROBOT_ARMS_DIR=/opt/ros/%s/share/visp/data/' % args.rosversion)
-    data.append('export VISP_SCENES_DIR=/opt/ros/%s/share/visp/data/' % args.rosversion)
+    data.append('export VISP_ROBOT_ARMS_DIR=/opt/ros/%s/share/visp/data/robot-simulator' % args.rosversion)
+    data.append('export VISP_SCENES_DIR=/opt/ros/%s/share/visp/data/wireframe-simulator' % args.rosversion)
     data.append(FIN_CONFIG)
     
     # Ecriture

@@ -44,7 +44,7 @@ def user_call(cmd_line):
 # Parse les options
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.description = "Configure l'environnement ROS sur une nouvelle machine"
-parser.add_argument('v', metavar='rosversion', type=str, nargs=1, help='Version de ROS (Hydro ou Indigo)', default='hydro')
+parser.add_argument('-v', metavar='rosversion', type=str, nargs=1, help='Version de ROS (Hydro ou Indigo)', default='hydro')
 
 args = parser.parse_args()
 args.rosversion = args.rosversion.lower()

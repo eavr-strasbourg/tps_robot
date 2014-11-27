@@ -110,7 +110,7 @@ if __name__ == '__main__':
         return sympy.Matrix([[0,-u[2],u[1]],[u[2],0,-u[0]],[-u[1],u[0],0]])
     
     def Rot(theta,u):
-        R = sympy.cos(theta)*sympy.Identity(3) + sympy.sin(theta)*sk(u) + (1-sympy.cos(theta))*(u*u.transpose())
+        R = sympy.cos(theta)*sympy.eye(3) + sympy.sin(theta)*sk(u) + (1-sympy.cos(theta))*(u*u.transpose())
         return sympy.Matrix(R)
 
     def Homogeneous(t, theta, u):

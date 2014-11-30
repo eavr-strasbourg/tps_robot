@@ -21,7 +21,7 @@
 
 
 \newcommand{\school}{Télécom Physique Strasbourg, TIC-Santé 2ème année}
-\renewcommand{\year}{2013-2014}
+\renewcommand{\year}{2014-2015}
 
 \lhead[]{\fancyplain{}{\scriptsize\school}}
 \rhead[]{}
@@ -125,19 +125,26 @@ Le but de son développement est de pouvoir mettre à disposition de chacun des 
 
 De façon assez logique, les logiciels utilisant ROS se présentent sous une forme élémentaire, le package. Sur un ordinateur donné, tous les packages de l'utilisateur sont situés dans le même dossier.
 
-Pour ce TP nous utilisons la dernière version de ROS : \emph{Hydro}. La nouvelle version, \emph{Indigo}, sera directement compatible avec le TP.
+Pour ce TP nous utilisons la dernière version de ROS : \emph{Indigo}.
 
 \subsection{Préparation de l'environnement de travail}
 
 \def\bin{<binôme>}
+\def\ros{\url{~}/ros}
 
 \begin{enumerate}
- \item Une fois connecté sur le PC, ouvrir une console\footnote{ L'utilisation de la console Unix est rappelée en Annexe \ref{anx:unix}} et aller dans le répertoire \texttt{\url{~}/ros\_workspace}.\\
+ \item Une fois connecté sur le PC, ouvrir une console\footnote{ L'utilisation de la console Unix est rappelée en Annexe \ref{anx:unix}} et aller dans le répertoire \texttt{\ros}.\\
  Il s'agit du répertoire de travail de ROS, tous les paquets de ce répertoire seront donc détectés automatiquement pour la compilation et l'exécution.
+ Ce répertoire contient les différents répertoires :
+ \begin{itemize}
+ \item \texttt{build} : dossier de compilation
+ \item \texttt{devel} : dossier d'installation, c'est ici que ROS cherche les programmes
+ \item \texttt{src} : dossier des sources des différents packages
+ \end{itemize}
 Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  \item Aller dans le répertoire \texttt{tps\_robot} : 
  \begin{itemize}
-  \item \texttt{cd tps\_robot} (depuis \texttt{\url{~}/ros\_workspace})
+  \item \texttt{cd src/tps\_robot} (depuis \texttt{\ros})
   \item ou plus simplement \texttt{roscd tps\_robot} (depuis n'importe où)
  \end{itemize}
  Ce package contient les simulateurs utilisés pour le TP. Pour le mettre à jour et initialiser l'environnement de la machine :
@@ -160,17 +167,11 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  \item \texttt{launch} : contient les fichiers \emph{launchfile} qui automatisent l'exécution de plusieurs programmes à la fois
  \item \texttt{urdf} : contient les fichiers urdf (Universal Robot Description File), décrivant les modèles géométriques des robots
  \end{itemize}
- \item Dossiers créés automatiquement à la compilation (peuvent ne pas être présents)
- \begin{itemize}
- \item \texttt{bin} : exécutables compilés
- \item \texttt{build} : fichiers temporaires de compilation
- \item \texttt{lib} : librairie compilée
- \end{itemize}
  \end{itemize}
  
  \item Compiler le package :
  \begin{itemize}
- \item \texttt{roscd tps\_robot/..} 
+ \item \texttt{cd \ros}
  \item \texttt{catkin\_make}
  \end{itemize}
  \end{enumerate}
@@ -179,7 +180,7 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  
 \begin{enumerate}
 
-\item On voit qu'un exécutable \texttt{simu4Points} a été compilé dans \texttt{bin}. Dans ROS les exécutables sont appelés des \emph{nodes}.
+\item On voit qu'un exécutable \texttt{simu4Points} a été compilé. Dans ROS les exécutables sont appelés des \emph{nodes}.
 ROS intègre la complétion automatique. Pour exécuter un node, taper :
 \begin{itemize}
 \item \texttt{rosrun tp<tab>} : complète avec le nom du package
@@ -187,8 +188,8 @@ ROS intègre la complétion automatique. Pour exécuter un node, taper :
 \end{itemize}
 La commande \texttt{rosrun} est juste un raccourci pour exécuter les programmes se trouvant dans un package ROS avec l'aide de l'autocomplétion. Cela permet de lancer des programmes se trouvant dans différents dossiers sans avoir besoin de naviguer dans le système de fichiers.
 
-On voit qu'en plus de \texttt{simu4Points}, ROS nous propose d'exécuter \texttt{arm\_bridge.py}, \\\texttt{configure.py}  et \texttt{setpoint4Points.py}. Il s'agit de fichiers Python qui n'ont pas besoin d'être compilés pour être lancés\footnote{ Pour être détecté par \texttt{rosrun} un fichier Python doit être exécutable}.
-On reconnaît le fichier \texttt{configure.py} qui a été lancé au début pour initialiser l'environnement.
+On voit qu'en plus de \texttt{simu4Points}, ROS nous propose d'exécuter \texttt{arm\_bridge.py}, \\\texttt{dh\_code.py}, \texttt{configure.py}  et \texttt{setpoint4Points.py}. Il s'agit de fichiers Python qui n'ont pas besoin d'être compilés pour être lancés\footnote{ Pour être détecté par \texttt{rosrun} un fichier Python doit être exécutable}.
+On reconnaît le fichier \texttt{configure.py} qui a été lancé en première séance pour initialiser l'environnement.
 \item Dans la prise en main nous nous intéressons à :
 \begin{itemize}
 \item  \texttt{simu4Points} : simule un asservissement visuel
@@ -226,8 +227,8 @@ Pour pouvoir exploiter ces avantages dans le logiciel Qt Creator, il faut égale
 Lors des prochaines séances il faudra également lancer Qt Creator via la console\footnote{ Attention notamment à l'ouverture automatique des \texttt{.cpp} dans Qt Creator : le logiciel ainsi lancé ne sera pas interfacé avec l'environnement ROS.}.
 Pour ouvrir le package tps\_robot :
 \begin{itemize}
-\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du répertoire \texttt{ros\_workspace}
- \item Indiquer \texttt{ros\_workspace/build} comme répertoire de compilation
+\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du répertoire \texttt{\ros}
+ \item Indiquer \texttt{\ros/build} comme répertoire de compilation
  \item Valider et exécuter CMake pour obtenir l'affichage des fichiers source
  \item Avec \texttt{File/Open file}, ouvrir également le fichier \texttt{script/setpoint4Points.py}
 \end{itemize}
@@ -251,14 +252,15 @@ Des outils en ligne de commande existent pour analyser les informations circulan
 Vérifier la présence des autres topics publiés.
 \item Si le topic contient des valeurs numériques, ce qui est le cas des \texttt{Float32MultiArray}, \texttt{rqt\_plot} peut en tracer la courbe temporelle : 
 \begin{itemize}
-\item Commande : \texttt{rqt\_plot <topic>/<attribut>[indice] -p <intervalle de temps>}
-\item Par exemple : \texttt{rqt\_plot setpoint/data[0] -p 10}
+\item Commande : \texttt{rqt\_plot <topic>/<attribut>[indice] }
+\item Par exemple : \texttt{rqt\_plot setpoint/data[0]}
 \end{itemize}
 \item Si le topic contient des images, un outil permet de les afficher. Vérifier que le topic \texttt{camera/image} contient des données de type \texttt{sensor\_msgs/Image} puis les afficher :
 \begin{itemize}
 \item \texttt{rosrun image\_view image\_view image:=camera/image}
 \end{itemize}
-On reconnaît la syntaxe ROS : \texttt{image\_view} est un node du package lui aussi appelé \texttt{image\_view}. Ce node prend en argument le topic sur lequel recevoir des images pour simplement les afficher dans une fenêtre. Dans notre cas, le node de simulation a aussi sa propre fenêtre : il réalise l'opération inverse, à savoir publier sur un topic les images générées.
+On reconnaît la syntaxe ROS : \texttt{image\_view} est un node du package lui aussi appelé \texttt{image\_view}. Ce node prend en argument le topic sur lequel recevoir des images pour simplement les afficher dans une fenêtre.
+Ici les images sont générées par le node de simulation, qui les affiche déjà dans sa propre fenêtre et les publie sur le topic.
 \end{enumerate}
 
 \subsection{Serveur de paramètres - rosparam}
@@ -297,12 +299,13 @@ Arrêter l'enregistrement après quelques dizaines de secondes, et quitter les d
 \item Deux outils existent pour relire les topics :
 \begin{itemize}
 \item \texttt{rosbag play <fichier.bag>} : republie les données sur les topics enregistrés
-\item \texttt{rxbag <fichier.bag>} : ouvre une interface permettant de choisir les topics republiés
+\item \texttt{rqt\_bag} : ouvre une interface permettant de choisir les topics republiés
 \end{itemize}
-Relancer le ROSmaster. Avec \texttt{rxbag}, lancer la republication de \texttt{/setpoint}.
+Relancer le ROSmaster. Avec \texttt{rqt\_bag}, lancer la republication de \texttt{/setpoint}.
 Relancer le node \texttt{simu4Points} : noter qu'il suit la consigne alors que le node \texttt{setpoint4Points} n'est pas lancé. En effet les consignes enregistrées sont republiées sur le même topic. Le node ne s'intéresse pas à la source du topic, seulement à son contenu. 
 
-\item Noter que  \texttt{simu4Points} a recommencé à publier ses topics. Que se passe-t-il si avec \texttt{rxbag} on lance la publication parallèle d'un même topic, par exemple \texttt{/position}  ? Utiliser \texttt{rqt\_plot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter).
+\item Relancer le node \texttt{setpoint4Points}. Comment réagit la simulation ? 
+Utiliser \texttt{rqt\_plot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter).
 \end{enumerate}
 
 \subsection*{Pour approfondir}
@@ -319,10 +322,10 @@ Des tutoriaux pour bien d'autres aspects de ROS sont disponibles en ligne
 La deuxième séance est consacrée à la modélisation du robot.
 Pour cela un package sera créé par le binôme. 
 \begin{enumerate}
- \item  Création d'un package personnel : retourner dans le répertoire \texttt{\url{~}/ros\_workspace}. On souhaite y créer un package qui sera dépendant de \texttt{tps\_robot}
+ \item  Création d'un package personnel : retourner dans le répertoire \texttt{\ros}. On souhaite y créer un package qui sera dépendant de \texttt{tps\_robot}
   \begin{itemize}
-   \item Création du package : \texttt{roscreate-pkg \bin ~tps\_robot}
-   \item Copier le fichier \texttt{tps\_robot/src/control.cpp} dans le nouveau package
+   \item Création du package : \texttt{catkin\_create\_pkg \bin~tps\_robot}
+   \item Copier les fichiers \texttt{tps\_robot/src/control.cpp} et \texttt{tps\_robot/src/modeles.cpp} dans le nouveau package
    \item Modifier le fichier \texttt{\bin/CMakeLists.txt} pour indiquer à ROS de compiler la source : \\
    \texttt{rosbuild\_add\_executable(control control.cpp)}
   \end{itemize}

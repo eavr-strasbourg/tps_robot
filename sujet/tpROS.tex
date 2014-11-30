@@ -150,6 +150,7 @@ Toutes les commandes du TP sont à entrer dans un terminal en ligne de commande.
  Ce package contient les simulateurs utilisés pour le TP. Pour le mettre à jour et initialiser l'environnement de la machine :
  \begin{itemize}
  \item \texttt{git pull}\footnote{git est un outil de contrôle de version, semblable à svn.}
+ \item \texttt{rosrun tps\_robot configure.py}
  %\item \texttt{rosrun tps\_robot configure.py}
  \end{itemize}
  Afficher ce répertoire dans le gestionnaire de fichiers afin de voir la structure typique d'un package ROS :
@@ -189,7 +190,7 @@ ROS intègre la complétion automatique. Pour exécuter un node, taper :
 La commande \texttt{rosrun} est juste un raccourci pour exécuter les programmes se trouvant dans un package ROS avec l'aide de l'autocomplétion. Cela permet de lancer des programmes se trouvant dans différents dossiers sans avoir besoin de naviguer dans le système de fichiers.
 
 On voit qu'en plus de \texttt{simu4Points}, ROS nous propose d'exécuter \texttt{arm\_bridge.py}, \\\texttt{dh\_code.py}, \texttt{configure.py}  et \texttt{setpoint4Points.py}. Il s'agit de fichiers Python qui n'ont pas besoin d'être compilés pour être lancés\footnote{ Pour être détecté par \texttt{rosrun} un fichier Python doit être exécutable}.
-On reconnaît le fichier \texttt{configure.py} qui a été lancé en première séance pour initialiser l'environnement.
+On reconnaît le fichier \texttt{configure.py} qui a été lancé pour initialiser l'environnement.
 \item Dans la prise en main nous nous intéressons à :
 \begin{itemize}
 \item  \texttt{simu4Points} : simule un asservissement visuel
@@ -268,14 +269,14 @@ Ici les images sont générées par le node de simulation, qui les affiche déj�
 Le ROSmaster inclue également un serveur de paramètres. Tous les nodes peuvent ainsi récupérer et écrire des valeurs diverses et variées.
 Les paramètres sont à utiliser de préférence aux topics pour communiquer des valeurs qui changent peu souvent et qui n'ont pas besoin d'être diffusées à chaque itération sur le réseau.
 
-On peut ainsi voir que \texttt{setpoint4Points.py} utilise Ts (période des créneaux pour les consignes) comme un paramètre. L'intérêt est aussi de pouvoir modifier les paramètres en ligne de commande pendant que les programmes tournent :
+Ces paramètres sont accessibles en ligne de commande :
 \begin{itemize}
 \item \texttt{rosparam list} : liste les paramètres disponibles
 \item \texttt{rosparam get Ts} : affiche la valeur de \texttt{Ts}
 \item \texttt{rosparam set Ts 1} : met à jour le paramètre
 \end{itemize}
-De la même façon, \texttt{simu4Points.cpp} indique que le gain \texttt{Kp} de la loi de commande est un paramètre.
-Utiliser cet outil avec \texttt{Ts} et \texttt{Kp} pour changer la période des consignes et le gain de l'asservissement.
+Ici les deux paramètres modifiables sont \texttt{Ts} (période des créneaux de consigne) et \texttt{Kp} (gain de l'asservissement).
+Utiliser \texttt{rosparam} pour obtenir la valeur de ces paramètres, puis changer la période des consignes et le gain de l'asservissement.
 
 \subsection{Gérer les exécutions simultanées - roslaunch}
 
@@ -284,7 +285,7 @@ Pour un robot complexe il peut rapidement y avoir plusieurs nodes à exécuter e
 \item \texttt{roslaunch <package> <launchfile>} : exécute le launchfile
 \end{itemize}
 Quitter les nodes ainsi que le \texttt{roscore}.
-Ouvrir le fichier \texttt{tps\_robot/launch/sim.launch} afin de constater qu'il initialise les deux paramètres \texttt{Ts} et \texttt{Kp} et qu'il lance les deux nodes \texttt{setpoint4Points.py} et \texttt{simu4Points}.
+Ouvrir le fichier \texttt{tps\_robot/launch/simu.launch} afin de constater qu'il initialise les deux paramètres \texttt{Ts} et \texttt{Kp} et qu'il lance les deux nodes \texttt{setpoint4Points.py} et \texttt{simu4Points}.
 L'exécuter et vérifier que la simulation fonctionne : \texttt{roslaunch} lance automatiquement le ROSmaster s'il n'est pas déjà actif.
 
 \subsection{Enregistrer et rejouer des données - rosbag}
@@ -305,7 +306,8 @@ Relancer le ROSmaster. Avec \texttt{rqt\_bag}, lancer la republication de \textt
 Relancer le node \texttt{simu4Points} : noter qu'il suit la consigne alors que le node \texttt{setpoint4Points} n'est pas lancé. En effet les consignes enregistrées sont republiées sur le même topic. Le node ne s'intéresse pas à la source du topic, seulement à son contenu. 
 
 \item Relancer le node \texttt{setpoint4Points}. Comment réagit la simulation ? 
-Utiliser \texttt{rqt\_plot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter).
+Vérifier avec \texttt{rqt\_graph} que deux nodes publient sur le même topic.
+Utiliser \texttt{rqt\_plot} pour visualiser l'effet d'un conflit de publication (plusieurs nodes publiant sur le même topic sans se concerter) : \texttt{rqt\_plot setpoint/data[0]}.
 \end{enumerate}
 
 \subsection*{Pour approfondir}
@@ -327,7 +329,8 @@ Pour cela un package sera créé par le binôme.
    \item Création du package : \texttt{catkin\_create\_pkg \bin~tps\_robot}
    \item Copier les fichiers \texttt{tps\_robot/src/control.cpp} et \texttt{tps\_robot/src/modeles.cpp} dans le nouveau package
    \item Modifier le fichier \texttt{\bin/CMakeLists.txt} pour indiquer à ROS de compiler la source : \\
-   \texttt{rosbuild\_add\_executable(control control.cpp)}
+   \texttt{add\_executable(control control.cpp modeles.cpp) \\ 
+   target\_link\_libraries(control \$\{catkin\_LIBRARIES\})}
   \end{itemize}
   \item Ouverture du package personnel dans Qt Creator
   \begin{itemize}
@@ -342,9 +345,9 @@ Pour cela un package sera créé par le binôme.
 
 Ouvrir le fichier \texttt{control.cpp}. On voit qu'il instancie une classe \texttt{tpRobot} avec un certain nombre de degrés de liberté :
 \begin{verbatim}
-   // init robot
-    const unsigned int N = 3;
-    tpRobot robot(rosNH, N);
+   // initialisation de la classe robot
+    Robot robot(rosNH);
+    const unsigned int N = robot.getDOFs();
 \end{verbatim}
 
 Cette classe intègre les interfaces (publication et souscription de topics) avec les autres nodes ROS. Elle contient trois méthodes :
@@ -355,7 +358,11 @@ Cette classe intègre les interfaces (publication et souscription de topics) ave
 \end{itemize}
 Les variables \texttt{q} et \texttt{v} sont de classe \vpV, qui est un vecteur au sens mathématique. Son fonctionnement est détaillé en Annexe \ref{sec:visp}. \\
 
-L'objectif du TP est donc d'utiliser la mesure de position articulaire pour calculer le modèle géométrique, et envoyer des consignes de position ou de vitesse au simulateur. Par la suite la programmation se fera en modifiant \texttt{control.cpp}.
+L'objectif du TP est d'utiliser la mesure de position articulaire pour calculer le modèle géométrique, et envoyer des consignes de position ou de vitesse au simulateur. Par la suite la programmation se fera en modifiant :
+\begin{itemize}
+\item \texttt{modeles.cpp} pour les modèles géométriques, Jacobiens, etc.
+\item \texttt{control.cpp} pour l'algorithme de commande
+\end{itemize}
 
 \begin{enumerate}
   \item Compilation du package personnel : 

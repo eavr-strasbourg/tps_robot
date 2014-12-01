@@ -6,14 +6,14 @@ using namespace std;
 // Pour chaque robot: MGD, MGI, Jacobien
 
 // calcul modele geometrique direct
-int Robot::calcMGD(const vpColVector &q, vpColVector &pose)
+int TPSRobot::calcMGD(const vpColVector &q, vpColVector &pose)
 {
-    if(robot_name_ == "turret")
+    if(name_ == "turret")
     {
 
 
     }
-    else if(robot_name_ == "scara")
+    else if(name_ == "scara")
     {
 
 
@@ -23,14 +23,14 @@ int Robot::calcMGD(const vpColVector &q, vpColVector &pose)
 
 
 // calcul modele geometrique inverse analytique ou iteratif
-int Robot::calcMGI(const vpColVector &q0, const vpColVector &pose_des, vpColVector &q)
+int TPSRobot::calcMGI(const vpColVector &q0, const vpColVector &pose_des, vpColVector &q)
 {
-    if(robot_name_ == "turret")
+    if(name_ == "turret")
     {
 
 
     }
-    else if(robot_name_ == "scara")
+    else if(name_ == "scara")
     {
 
 
@@ -40,14 +40,14 @@ int Robot::calcMGI(const vpColVector &q0, const vpColVector &pose_des, vpColVect
 
 
 // calcul  Jacobien
-int Robot::calcJacobian(const vpColVector &q, vpMatrix &J)
+int TPSRobot::calcJacobian(const vpColVector &q, vpMatrix &J)
 {
-    if(robot_name_ == "turret")
+    if(name_ == "turret")
     {
 
 
     }
-    else if(robot_name_ == "scara")
+    else if(name_ == "scara")
     {
 
 

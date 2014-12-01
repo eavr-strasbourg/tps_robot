@@ -7,108 +7,100 @@ using std::string;
 using std::cout;
 using std::endl;
 
-tpRobot::tpRobot(ros::NodeHandle &mainNode)
+TPSRobot::TPSRobot(ros::NodeHandle &_nh)
 {    
     // parse URDF to get robot data (name, DOF, joint limits, etc.)
     urdf::Model model;
     model.initParam("/robot_description");
 
-    // DOF's and maximum velocity for each
-    vMax.clear();
+    // store name
+    name_ = model.getName();
+
+    // init joints
+    v_max_.clear();
     boost::shared_ptr<urdf::Joint> joint;
-    n = 0;
+    n_ = 0;
+    cmd_.name.clear();
     for (std::map<std::string,boost::shared_ptr<urdf::Joint> >::iterator joint_it = model.joints_.begin();joint_it != model.joints_.end(); joint_it++)
     {
         joint = joint_it->second;
         if(joint->type != urdf::Joint::FIXED)
         {
-            n += 1;
-            vMax.push_back(joint->limits->velocity);
+            n_ += 1;
+            v_max_.push_back(joint->limits->velocity);
+            cmd_.name.push_back(joint->name);
         }
     }
-    cout << "Found robot description: " << model.getName() << " with " << n << " DOFs" << endl;
+    cout << "Found robot description: " << model.getName() << " with " << n_ << " DOFs" << endl;
 
-
-
-    // initialise inner variables
-    q.resize(n);
-    tfP.resize(6);
-    command.position.resize(n);
-    command.velocity.resize(n);
-    command.name.resize(n);
-
-    char qi[FILENAME_MAX];
-    unsigned int i;
-    for(i=0;i<n;i++)
-    {
-        sprintf(qi, "%d", i+1);
-        command.name[i] = "joint" + std::string(qi);
-    }
+    q_.resize(n_);
+    cmd_.position.resize(n_);
+    cmd_.velocity.resize(n_);
 
     // initialise ROS topics: publisher for command, subscriber for position measurement
-    commandPub = mainNode.advertise<sensor_msgs::JointState>("/main_control/command", 1000);
-    positionSub = mainNode.subscribe("/joint_states", 1000, &tpRobot::rosReadPosition, this);
+    cmd_publisher_ = _nh.advertise<sensor_msgs::JointState>("/main_control/command", 1000);
+    position_subscriber_ = _nh.subscribe("/joint_states", 1000, &TPSRobot::onReadPosition, this);
     ros::spinOnce();
 }
 
 // read joint_state topic and write articular position
-void tpRobot::rosReadPosition(const sensor_msgs::JointState::ConstPtr& msg)
+void TPSRobot::onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg)
 {
     // parse message to joint position, check for joint names
-    for(unsigned int i=0;i<n;++i)
-        for(unsigned int j=0;j<n;++j)
+    for(unsigned int i=0;i<n_;++i)
+        for(unsigned int j=0;j<n_;++j)
         {
-            if(msg->name[j] == command.name[i])
-                q[i] = msg->position[j];
+            if(_msg->name[j] == cmd_.name[i])
+                q_[i] = _msg->position[j];
         }
-
 }
 
 
 // set articular position
-void tpRobot::setPosition(const vpColVector &position)
+void TPSRobot::setPosition(const vpColVector &_position)
 {
-    if(position.getRows() != n)
-        std::cout << "tpRobot::setPosition: bad dimension" << std::endl;
+    if(_position.getRows() != n_)
+        std::cout << "TPSRobot::setPosition: bad dimension" << std::endl;
     else
     {
-        command.header.stamp = ros::Time::now();
-        for(unsigned int i=0;i<n;++i)
+        cmd_.header.stamp = ros::Time::now();
+        for(unsigned int i=0;i<n_;++i)
         {
-            command.velocity[i] = 0;
-            command.position[i] = position[i];
+            cmd_.velocity[i] = 0;
+            cmd_.position[i] = _position[i];
         }
 
-        commandPub.publish(command);
+        cmd_publisher_.publish(cmd_);
     }
 }
 
 
 // set articular velocity
-void tpRobot::setVelocity(vpColVector velocity)
+void TPSRobot::setVelocity(const vpColVector &_velocity)
 {
-    if(velocity.getRows() != n)
-        std::cout << "tpRobot::setVelocity: bad dimension" << std::endl;
+    if(_velocity.getRows() != n_)
+        std::cout << "TPSRobot::setVelocity: bad dimension" << std::endl;
     else
     {
-        command.header.stamp = ros::Time::now();
+        cmd_.header.stamp = ros::Time::now();
 
-        // if vMax, scales velocity (educational goal)
+        // if v_max_, scales velocity (educational goal)
         unsigned int i;
         double scale = 1.;
-        if(vMax.size()!=0)
+        if(v_max_.size()!=0)
         {
-            for(i=0;i<n;++i)
-                scale = std::max(scale, std::abs(velocity[i])/vMax[i]);
+            for(i=0;i<n_;++i)
+                scale = std::max(scale, std::abs(_velocity[i])/v_max_[i]);
             if(scale > 1)
                 std::cout << "scaling v: " << scale << std::endl;
             scale = 1./scale;
 
         }
 
-        for(i=0;i<n;++i)
-            command.velocity[i] = velocity[i] * scale;
+        for(i=0;i<n_;++i)
+            cmd_.velocity[i] = _velocity[i] * scale;
 
-        commandPub.publish(command);
+        cmd_publisher_.publish(cmd_);
     }
 }
+

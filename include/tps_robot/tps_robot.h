@@ -1,5 +1,5 @@
-#ifndef TPROBOT_H
-#define TPROBOT_H
+#ifndef TPSROBOT_H
+#define TPSROBOT_H
 
 #include <visp/vpColVector.h>
 #include <visp/vpQuaternionVector.h>
@@ -14,50 +14,54 @@
 */
 
 
-class tpRobot {
+class TPSRobot {
 
 public:
+    // --- These methods are defined in tps_robot.cpp ---
     // constructor
-    tpRobot(ros::NodeHandle &mainNode);
-
+    TPSRobot(ros::NodeHandle &_nh);
     // get number of dof
-    inline unsigned int getDOFs() {return n;}
-
+    inline unsigned int getDOFs() {return n_;}
+    // get name
+    inline std::string getName() {return name_;}
     // get articular position
-    inline void getPosition(vpColVector &position) {position = q;}
-
+    inline void getPosition(vpColVector &_position) {_position = q_;}
     // set articular position
-    void setPosition(const vpColVector &position);
-
+    void setPosition(const vpColVector &_position);
     // set articular velocity
-    void setVelocity(vpColVector velocity);
-
+    void setVelocity(const vpColVector &_velocity);
     // stop motion
-    inline void stopMotion() {setPosition(q);}
+    inline void stopMotion() {setPosition(q_);}
+    // --- End defined in tps_robot.cpp ---
+
+
+    // --- These methods are defined in modeles.cpp ---
+    // To be completed by the students
+
+    // calcul modele geometrique direct
+    int calcMGD(const vpColVector &q, vpColVector &pose);
+
+    // calcul modele geometrique inverse analytique ou iteratif
+    int calcMGI(const vpColVector &q0, const vpColVector &pose_des, vpColVector &q);
+
+    // calcul  Jacobien
+    int calcJacobian(const vpColVector &q, vpMatrix &J);
 
 protected:
-    unsigned int n;
-    vpColVector q;
-    ros::Publisher commandPub;
-    ros::Subscriber positionSub;
-    sensor_msgs::JointState command;
+    unsigned int n_;
+    std::string name_;
+    vpColVector q_;
+    ros::Publisher cmd_publisher_;
+    ros::Subscriber position_subscriber_;
+    sensor_msgs::JointState cmd_;
 
     // maximum velocity
-    std::vector<double> vMax;
-
-    // related to true tf transform
-    std::string tfBase, tfEnd;
-    vpColVector tfP;
-    vpRotationMatrix tfR;
-    vpQuaternionVector Rq;
-    vpRxyzVector Rxyz;
-
-    ros::NodeHandle* rosNH;
+    std::vector<double> v_max_;
 
     // ROS functions
-    void rosReadPosition(const sensor_msgs::JointState::ConstPtr& msg);
+    void onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg);
 };
 
 
 
-#endif // TPROBOT_H
+#endif // TPSROBOT_H

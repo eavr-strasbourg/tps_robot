@@ -1,7 +1,5 @@
 <!-- Launch file for turret 3-DOF simulator -->
 <launch>
-<!-- Robot name as in controller -->
-<param name="robot_name" value="turret" />
 <param name="robot_description" textfile="$(find tps_robot)/urdf/turret.urdf" />
 
 <!-- Bridge node to transform high-level position and velocity commands to low-level position setpoints -->

@@ -1,7 +1,6 @@
 <!-- Launch file for Scara 4-DOF simulator -->
 <launch>
 <!-- Robot name as in controller -->
-<param name="robot_name" value="scara" />
 <param name="robot_description" textfile="$(find tps_robot)/urdf/scara.urdf" />
 	
 <!-- Bridge node to transform high-level position and velocity commands to low-level position setpoints -->

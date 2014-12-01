@@ -6,64 +6,6 @@
 
 using namespace std;
 
-// Fonctions a definir pendant le TP (apres le main() )
-// Pour chaque robot: MGD, MGI, Jacobien
-namespace turret
-{
-const double b=.5, d=.1;
-const unsigned int m = 3;
-// MGD 3 ddl
-int calcMGD(const vpColVector &q, vpColVector &p);
-// Jacobien 3 ddl
-int calcJac(const vpColVector &q, vpMatrix &J);
-// MGI 3 ddl
-int calcMGI(const vpColVector &qi, const vpColVector &p, vpColVector &q);
-}
-namespace scara {
-const double h=.27, a=.2, b=.15, c=.07;
-const unsigned int m = 4;
-// MGD 4 ddl
-int calcMGD(const vpColVector &q, vpColVector &p);
-// Jacobien 4 ddl
-int calcJac(const vpColVector &q, vpMatrix &J);
-// MGI iteratif 4 ddl
-int calcMGI(const vpColVector &qi, const vpColVector &pd, vpColVector &q);
-}
-
-
-// Fonctions generiques a utiliser dans le main()
-int calcMGD(const vpColVector &q, vpColVector &p, const unsigned int &N)
-{
-    switch(N)
-    {
-    case 3: return turret::calcMGD(q, p);break;
-    case 4: return scara::calcMGD(q, p);break;
-    default:break;
-    }
-    return -1;
-}
-int calcJac(const vpColVector &q, vpMatrix &J, const unsigned int &N)
-{
-    switch(N)
-    {
-    case 3: return turret::calcJac(q, J);break;
-    case 4: return scara::calcJac(q, J);break;
-    default:break;
-    }
-    return -1;
-}
-int calcMGI(const vpColVector &qi, const vpColVector &pd, vpColVector &q, const unsigned int &N)
-{
-    switch(N)
-    {
-    case 3: return turret::calcMGI(qi, pd, q);break;
-    case 4: return scara::calcMGI(qi, pd, q);break;
-    default:break;
-    }
-    return -1;
-}
-
-
 // debut du main
 
 int main(int argc, char ** argv)
@@ -71,58 +13,57 @@ int main(int argc, char ** argv)
     // initialisation du node ROS
     ros::init(argc, argv, "main_control");
     ros::start();
-    ros::NodeHandle rosNH;
+    ros::NodeHandle nh;
     const double rate = 30;
     ros::Rate loop(rate);
 
     // initialisation de la classe robot
-    tpRobot robot(rosNH);
+    TPSRobot robot(nh);
     const unsigned int N = robot.getDOFs();
+    const std::string name = robot.getName();
 
-    // param = which task
-    int task = 0;
-    if(rosNH.getParam("/t", task) == false)
-        rosNH.setParam("/t", task);
+    // initialisation des parametres
+    // quelle question est a realiser
+    int question;
+    nh.param<int>("/Q", question, 0);
 
-    // param = rate
-    double Ts = 10;
-    if(rosNH.getParam("/Ts", Ts) == false)
-        rosNH.setParam("/Ts", Ts);
+    // frequence consigne
+    double Ts;
+    nh.param<double>("/Ts", Ts, 10);
 
-    // param = lambda
-    double lambda = 1;
-    if(rosNH.getParam("/lambda", lambda) == false)
-        rosNH.setParam("/lambda", lambda);
+    // gain du controle en vitesse
+    double lambda;
+    nh.param<double>("/lambda", lambda, 1);
+    // fin initialisation des parametres
 
-    // *** exemple d'un publisher supplementaire
+    // *** exemple d'un publisher supplementaire pour l'erreur de position
     // declaration du publisher
-    ros::Publisher examplePub = rosNH.advertise<std_msgs::Float32MultiArray>("/example", 1000);
+    ros::Publisher error_publisher = nh.advertise<std_msgs::Float32MultiArray>("/error", 1000);
     // declaration du message a publier
-    std_msgs::Float32MultiArray example;example.data.resize(3);
+    std_msgs::Float32MultiArray error;error.data.resize(3);
     // *** fin example
 
     // variables utilisees dans la boucle
     unsigned int iter = 0;      // iterations
     vpColVector q(N);           // vecteur des positions articulaires
-    vpColVector p_true(N);      // vecteur de la vraie position (X Y Z R P Y)
+    vpColVector p(6);           // vecteur de la position operationelle
     vpColVector qCommand(N);    // consigne des positions articulaires
     vpColVector vCommand(N);    // consigne en vitesse
 
     // points entre lesquels osciller
-    vpColVector x1(N), x2(N);
-    // definir ici les valeurs des points
-    if(N==3)
-    {   // x1[0] = ...
+    vpColVector p1(N), p2(N);
+    // definir ici les valeurs des points a atteindre
+    if(name == "turret")
+    {   // p1[0] = ...
 
     }
     else
-    {   // x1[0] = ...
+    {   // p1[0] = ...
 
     }
 
-    vpColVector xd = x1, x0 = x2;
-    const double T = 10; // temps au bout duquel changer de consigne
-    const unsigned int iterSwitch = T*rate;
+    vpColVector pd = p1, p0 = p2;
+    unsigned int iterSwitch;
     
     // boucle de commande
     while(ros::ok())
@@ -130,18 +71,19 @@ int main(int argc, char ** argv)
         // incrementation de l'iteration
         iter++;
         // update parameters
-        rosNH.getParam("/t", task);
-        rosNH.getParam("/Ts", Ts);
-        rosNH.getParam("/lambda", lambda);
+        nh.getParam("/Q", question);
+        nh.getParam("/Ts", Ts);
+        nh.getParam("/lambda", lambda);
 
-        // switch entre x1 et x2
+        // switch entre p1 et p2 en fonction de la frequence
+        iterSwitch = Ts*rate;
         if(iter % iterSwitch == 0)
         {
-            x0 = xd;
-            if(iter % (2*iterSwitch) == 0) {xd = x2;}
-            else                           {xd = x1;}
+            p0 = pd;
+            if(iter % (2*iterSwitch) == 0) {pd = p2;}
+            else                           {pd = p1;}
         }
-        // ici xd est le point a atteindre et x0 est le point de depart
+        // a partir d'ici pd est le point a atteindre et p0 est le point de depart
 
         
         // lecture des positions articulaires
@@ -150,31 +92,31 @@ int main(int argc, char ** argv)
 
         // *** Modifier ici pour generer une commande en position (qCommand) ou en vitesse (vCommand)
 
-        // switch task
-        switch(task)
+        // differents cas en fonction de la question
+        switch(question)
         {
-        case 0: // question Q2, affiche juste le MGD et n'envoie pas de commande
+        case 1: // question Q1, affiche juste le MGD et n'envoie pas de commande
 
             break;
 
 
-        case 1: // oscille entre p1 et p2 dans l'espace articulaire
+        case 4: // question Q4, oscille entre p1 et p2 dans l'espace articulaire
 
             break;
 
 
-        case 2: // oscille avec generation de trajectoire
+        case 8: // question Q8, oscille avec generation de trajectoire
 
                 break;
 
 
-        case 3: // oscille avec commande en vitesse
+        case 9: // question Q9, oscille avec commande en vitesse
 
             break;
 
 
         default:
-            cout << "task = " << task << ", rien a faire" << endl;
+            cout << "question = " << question << ", rien a faire" << endl;
             break;
         }
         
@@ -189,11 +131,11 @@ int main(int argc, char ** argv)
         
         
         // *** exemple d'un publisher supplementaire
-        // mise a jour de exemple.data
+        // mise a jour de error.data
         for(unsigned int i=0;i<3;++i)
-            example.data[i] = cos(0.1*(i+1)*iter);
+            error.data[i] = p[i] - pd[i];
         // publication du message
-        examplePub.publish(example);
+        error_publisher.publish(error);
         // *** fin example
 
 
@@ -203,45 +145,4 @@ int main(int argc, char ** argv)
     }
 }
 
-
-
-// fonctions a modifier
-
-
-// MGD 3 ddl
-int turret::calcMGD(const vpColVector &q, vpColVector &p)
-{
-    return 0;
-}
-
-// Jacobien 3 ddl
-int turret::calcJac(const vpColVector &q, vpMatrix &J)
-{
-    return 0;
-}
-
-// MGI 3 ddl
-int turret::calcMGI(const vpColVector &qi, const vpColVector &p, vpColVector &q)
-{
-    return 0;
-}
-
-
-// MGD 4 ddl
-int scara::calcMGD(const vpColVector &q, vpColVector &p)
-{
-    return 0;
-}
-
-// Jacobien 4 ddl
-int scara::calcJac(const vpColVector &q, vpMatrix &J)
-{
-    return 0;
-}
-
-// MGI iteratif 4 ddl
-int scara::calcMGI(const vpColVector &qi, const vpColVector &pd, vpColVector &q)
-{
-    return 0;
-}
 

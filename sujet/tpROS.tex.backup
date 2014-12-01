@@ -375,8 +375,10 @@ L'objectif du TP est d'utiliser la mesure de position articulaire pour calculer 
    \end{itemize}
      \item Exécution du node personnel
   \begin{itemize}
+  \item Sous Qt Creator : icône de triangle vert en bas à gauche
   \item En ligne de commande :  \texttt{rosrun \bin~control}
-   \item Sous ROS, le nom de ce node est \texttt{/main\_control}
+   \item Sous ROS, le nom de ce node est \texttt{/mainControl}
+   \item Il est possible de lancer le programme en mode debug avec le triangle vert surmonté d'un insecte
   \end{itemize}
 \end{enumerate}
 
@@ -388,7 +390,7 @@ Une fois lancé, le node tel qu'il est ne fait qu'attendre la publication des po
   
 Compiler et lancer le simulateur : 
  \begin{itemize}
- \item \texttt{roslaunch tps\_robot turret.launch}
+ \item \texttt{roslaunch tps\_robot turret3.launch}
  \end{itemize}
  L'interface RViz apparaît avec un modèle 3D.
 RViz permet d'afficher la situation globale du robot. La fenêtre de gauche donne des informations sur les différents éléments (links) du robot.
@@ -406,22 +408,19 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  \label{travail2s}
 
 \begin{itemize}
- \medskip\item[\textbf{\underline{Q1}}] Dans \texttt{modeles.cpp}, programmer la fonction \texttt{CalcMGD}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires.
- Utiliser éventuellement la génération de code décrite en Annexe \ref{sec:dh}.\\
- La fonction est une méthode de la classe \texttt{robot} de \texttt{control.cpp}.
- Modifier ce fichier au sein de \texttt{case 1} pour qu'il affiche dans la console la position ainsi calculée. 
+ \medskip\item[\textbf{\underline{Q1}}] Programmer une fonction \texttt{CalcMGD}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires. La fonction est à coder dans \texttt{control.cpp}, avant le \texttt{main()}.
+ Afficher dans la console la position ainsi obtenue. \\Utiliser éventuellement la génération de code décrite en Annexe \ref{sec:dh}.
 
   \medskip\item[\textbf{\underline{Q2}}] En jouant sur les sliders (fenêtre \texttt{Joint State Publisher}), comparer en plusieurs endroits les valeurs de votre programme avec celles indiquées par le simulateur (Fig.\ref{fig:rviz}).
  Valider ainsi le modèle calculé. 
  
  \medskip\item[\textbf{\underline{Q3}}] Afficher le graphe des nodes et des topics. Appeler l'encadrant de TP pour décrire le fonctionnement de l'architecture affichée. 
  
- \medskip\item[\textbf{\underline{Q4}}] Programmer une fonction \texttt{CalcMGI} (\texttt{modele.cpp}) qui calcule le modèle géométrique inverse de façon analytique. 
- Coder, dans le \texttt{case 4} de \texttt{control.cpp}, la simulation alternant toutes les 10 secondes\footnote{La fréquence en Hz est déjà indiquée dans le code par l'instruction \texttt{ros::Rate loop(30)}. 10 secondes correspondent donc à 300 itérations dans la boucle while.} entre les points $P_1=(-0.065,-0.02,0.61)$ et $P_2=(-0.046, -0.046, 0.6)$.\\
- Une fois le programme lancé, utiliser la ligne de commande pour changer la question traitée : \texttt{rosparam set question 4}.
+ \medskip\item[\textbf{\underline{Q4}}] Programmer une fonction \texttt{CalcMGI} qui calcule le modèle géométrique inverse de façon analytique. 
+ Coder la simulation alternant toutes les 10 secondes\footnote{La fréquence en Hz est déjà indiquée dans le code par l'instruction \texttt{ros::Rate loop(30)}. 10 secondes correspondent donc à 300 itérations dans la boucle while.} entre les points $X_1=(-0.065,-0.02,0.61)$ et $X_2=(-0.046, -0.046, 0.6)$.
  
- 
- \medskip\item[\textbf{\underline{Q5}}] Afficher le graphe des nodes et des topics. 
+
+  \medskip\item[\textbf{\underline{Q5}}] Afficher le graphe des nodes et des topics. Sachant que le node \texttt{jointControl} convertit des consignes de position ou de vitesse et publie la position articulaire du robot sur \texttt{/jointControl/position}, commenter sur les conflits possibles avec l'interface des sliders \texttt{/joint\_state\_publisher}.
  
  \medskip\item[\textbf{\underline{Q6}}]  Vérifier dans une console que les positions obtenues sont bien celles demandées :
  \begin{verbatim}
@@ -441,16 +440,16 @@ On pourra aussi créer un nouveau \emph{publisher} (Annexe \ref{sec:publish}) pe
 La deuxième séance porte sur l'exploitation du jacobien dans la commande. On souhaite maintenant contrôler le robot dans l'espace opérationnel.
 
 \begin{itemize}
- \medskip\item[\textbf{\underline{Q8}}] On souhaite toujours que le robot se déplace entre $X_1=(0.065,-0.02,.61)$ et $X_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.\\
- Programmer cette stratégie dans le \texttt{case 8}, en utilisant l'une ou l'autre des procédure de calcul de MGI.
+ \medskip\item[\textbf{\underline{Q8}}] On souhaite toujours que le robot se déplace entre $X_1=(0.065,-0.02,.61)$ et $X_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.
+Programmer cette stratégie, en utilisant l'une ou l'autre des procédure de calcul de MGI.
  Vérifier avec  \texttt{tf} ou  \texttt{rqt\_plot} que les points sont bien atteints.
  
- \medskip\item[\textbf{\underline{Q9}}] Programmer une fonction \texttt{CalcJacobian} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires. 
+ \medskip\item[\textbf{\underline{Q9}}] Programmer une fonction \texttt{CalcJ} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires. 
   
  \medskip\item[\textbf{\underline{Q10}}] En cochant la case ``Show Trail'' de l'effecteur sous RViz, commenter la trajectoire obtenue.
  
  \medskip\item[\textbf{\underline{Q11}}] On souhaite réaliser le même mouvement qu'à la question Q8.
- On s'inspirera de la partie 3.2.2 de la seconde partie du cours de Robotique. On fera le mouvement opérationnel à vitesse constante dans un premier temps. Programmer cette procédure dans le \texttt{case 9}, vérifier que les points sont bien atteints et afficher la trajectoire correspondante.
+ On s'inspirera de la partie 3.2.2 de la seconde partie du cours de Robotique. On fera le mouvement opérationnel à vitesse constante dans un premier temps. Programmer cette procédure, vérifier que les points sont bien atteints et afficher la trajectoire correspondante.
   
 
  \end{itemize}
@@ -479,7 +478,7 @@ On souhaite contrôler à la fois la position cartésienne de l'effecteur et l'a
 Pour le contrôleur on n'oubliera pas d'initialiser $N$ à 4.
 \item Valider le modèle géométrique avec le simulateur :
 \begin{itemize}
-\item \texttt{roslaunch tps\_robot scara.launch}
+\item \texttt{roslaunch tps\_robot scara4.launch}
 \end{itemize}
 \item 
 Comme en deuxième séance, utiliser le MGI pour osciller entre les positions $\tilde{P}_1=(0.3,0.1,0.2,0.4)$ et $\tilde{P}_2=(0.3,0.1,0.2,-0.4)$.
@@ -606,7 +605,7 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
 \end{itemize}
 \item La boucle est fermée à l'exécution du node de commande (que vous écrirez...)
 \begin{itemize}
-\item \texttt{/main\_control} : reçoit les positions articulaires sur \texttt{/joint\_states}. Après calcul de la loi de commande, publie la consigne de position ou de vitesse sur \texttt{/main\_control/command}.
+\item \texttt{/main\_control} : reçoit les positions articulaires sur \texttt{/joint\_states}. Après calcul de la loi de commande, publie la consigne de position ou de vitesse sur \texttt{/mainControl/command}.
 \end{itemize}
 
 \end{enumerate}

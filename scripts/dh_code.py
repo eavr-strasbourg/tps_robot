@@ -119,7 +119,7 @@ if __name__ == '__main__':
     
     sq = 'q'
     sP = 'P'
-    sM = 'M'
+    sM = 'T'
     sJ = 'J'
 
     # load robot description file (Yaml)
@@ -214,7 +214,12 @@ if __name__ == '__main__':
         Jv = joint_prism[i]*z[i] + (1-joint_prism[i])*sk(z[i])*(p[dof-1]-p[i-1])
         Jw = (1-joint_prism[i]) * z[i]
         Js = sympy.Matrix(concatenate((Js,sympy.Matrix(concatenate((Jv,Jw),0))),1))
-      
+    print ''
+    '''
+    l = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+    for i in xrange(6):
+        print l[i], ':', sympy.simplify(Ps[i])
+    '''
     print ''
     print 'Building pose C code...'
     if 'pose' in robot.keys:

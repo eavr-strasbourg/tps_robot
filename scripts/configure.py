@@ -36,6 +36,7 @@ for pkg in user_pkg:
         try:
             pkg_arch = shutil.make_archive(pkg, 'tar', path_src, pkg)
             shutil.move(pkg_arch, path_arch)
+            print 'removing', path_src+pkg
             shutil.rmtree(path_src+pkg)
         except:
             pass

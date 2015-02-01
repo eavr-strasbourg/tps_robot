@@ -111,9 +111,6 @@ La mise en pratique des modèles et des lois de commande s'appuie sur l'architec
   
   \medskip\item[\textbf{\underline{Q4}}] Calculer de deux façons différentes la matrice jacobienne du robot.
   
-  \medskip\item[\textbf{{NB}}] En cas d'erreur dans le tableau des paramètres, il sera possible pendant le TP de calculer automatiquement
-  le modèle géométrique et la jacobienne, comme décrit en Annexe \ref{sec:dh}.
-  
 \end{itemize}
 
 
@@ -321,6 +318,7 @@ Des tutoriaux pour bien d'autres aspects de ROS sont disponibles en ligne
 \end{itemize}
 
 
+
 \newpage
 \section{Deuxième séance}
 La deuxième séance est consacrée à la modélisation du robot.
@@ -337,20 +335,19 @@ Pour cela un package sera créé par le binôme.
   \item Ouverture du package personnel dans Qt Creator
   \begin{itemize}
  \item Taper dans une ligne de commande : \texttt{qtcreator}
- \item Dans \texttt{Fichier/Ouvrir un fichier}, choisir le fichier \texttt{\ros/CMakeList.txt} 
- \item Indiquer \texttt{\ros/build} comme répertoire de compilation
+ \item Dans \texttt{Fichier/Ouvrir un fichier}, choisir le fichier \texttt{CMakeList.txt} du package personnel
+ \item Indiquer \texttt{\bin/build} comme répertoire de compilation
  \item Valider et exécuter CMake pour obtenir l'affichage des fichiers source
 \end{itemize}
 \end{enumerate}
 
 \subsection{Fonctionnement du node de commande}
 
-Ouvrir le fichier \texttt{control.cpp}. On voit qu'il instancie une classe \texttt{TPSRobot} avec un certain nombre de degrés de liberté :
+Ouvrir le fichier \texttt{control.cpp}. On voit qu'il instancie une classe \texttt{tpRobot} avec un certain nombre de degrés de liberté :
 \begin{verbatim}
    // initialisation de la classe robot
-    TPSRobot robot(nh);
+    Robot robot(rosNH);
     const unsigned int N = robot.getDOFs();
-    const std::string name = robot.getName();
 \end{verbatim}
 
 Cette classe intègre les interfaces (publication et souscription de topics) avec les autres nodes ROS. Elle contient trois méthodes :
@@ -371,12 +368,14 @@ L'objectif du TP est d'utiliser la mesure de position articulaire pour calculer 
   \item Compilation du package personnel : 
   \begin{itemize}
    \item Sous Qt Creator : icône de marteau en bas à gauche
-   \item En ligne de commande : \texttt{catkin\_make} dans \texttt{\ros}
+   \item En ligne de commande : \texttt{rosmake \bin}
    \end{itemize}
      \item Exécution du node personnel
   \begin{itemize}
+  \item Sous Qt Creator : icône de triangle vert en bas à gauche
   \item En ligne de commande :  \texttt{rosrun \bin~control}
-   \item Sous ROS, le nom de ce node est \texttt{/main\_control}
+   \item Sous ROS, le nom de ce node est \texttt{/mainControl}
+   \item Il est possible de lancer le programme en mode debug avec le triangle vert surmonté d'un insecte
   \end{itemize}
 \end{enumerate}
 
@@ -388,7 +387,7 @@ Une fois lancé, le node tel qu'il est ne fait qu'attendre la publication des po
   
 Compiler et lancer le simulateur : 
  \begin{itemize}
- \item \texttt{roslaunch tps\_robot turret.launch}
+ \item \texttt{roslaunch tps\_robot turret3.launch}
  \end{itemize}
  L'interface RViz apparaît avec un modèle 3D.
 RViz permet d'afficher la situation globale du robot. La fenêtre de gauche donne des informations sur les différents éléments (links) du robot.
@@ -406,22 +405,20 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  \label{travail2s}
 
 \begin{itemize}
- \medskip\item[\textbf{\underline{Q1}}] Dans \texttt{modeles.cpp}, programmer la fonction \texttt{CalcMGD}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires.
- Utiliser éventuellement la génération de code décrite en Annexe \ref{sec:dh}.\\
- La fonction est une méthode de la classe \texttt{robot} de \texttt{control.cpp}.
- Modifier ce fichier au sein de \texttt{case 1} pour qu'il affiche dans la console la position ainsi calculée. 
+ \medskip\item[\textbf{\underline{Q1}}] Programmer une fonction \texttt{CalcMGD}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires. La fonction est à coder dans \texttt{control.cpp}, avant le \texttt{main()}.
+ Afficher dans la console la position ainsi obtenue.
+
 
   \medskip\item[\textbf{\underline{Q2}}] En jouant sur les sliders (fenêtre \texttt{Joint State Publisher}), comparer en plusieurs endroits les valeurs de votre programme avec celles indiquées par le simulateur (Fig.\ref{fig:rviz}).
- Valider ainsi le modèle calculé. 
+ Valider ainsi le modèle calculé.
  
  \medskip\item[\textbf{\underline{Q3}}] Afficher le graphe des nodes et des topics. Appeler l'encadrant de TP pour décrire le fonctionnement de l'architecture affichée. 
  
- \medskip\item[\textbf{\underline{Q4}}] Programmer une fonction \texttt{CalcMGI} (\texttt{modele.cpp}) qui calcule le modèle géométrique inverse de façon analytique. 
- Coder, dans le \texttt{case 4} de \texttt{control.cpp}, la simulation alternant toutes les 10 secondes\footnote{La fréquence en Hz est déjà indiquée dans le code par l'instruction \texttt{ros::Rate loop(30)}. 10 secondes correspondent donc à 300 itérations dans la boucle while.} entre les points $P_1=(-0.065,-0.02,0.61)$ et $P_2=(-0.046, -0.046, 0.6)$.\\
- Une fois le programme lancé, utiliser la ligne de commande pour changer la question traitée : \texttt{rosparam set question 4}.
+ \medskip\item[\textbf{\underline{Q4}}] Programmer une fonction \texttt{CalcMGI} qui calcule le modèle géométrique inverse de façon analytique. 
+ Coder la simulation alternant toutes les 10 secondes\footnote{La fréquence en Hz est déjà indiquée dans le code par l'instruction \texttt{ros::Rate loop(30)}. 10 secondes correspondent donc à 300 itérations dans la boucle while.} entre les points $X_1=(-0.065,-0.02,0.61)$ et $X_2=(-0.046, -0.046, 0.6)$.
  
- 
- \medskip\item[\textbf{\underline{Q5}}] Afficher le graphe des nodes et des topics. 
+
+  \medskip\item[\textbf{\underline{Q5}}] Afficher le graphe des nodes et des topics. Sachant que le node \texttt{jointControl} convertit des consignes de position ou de vitesse et publie la position articulaire du robot sur \texttt{/jointControl/position}, commenter sur les conflits possibles avec l'interface des sliders \texttt{/joint\_state\_publisher}.
  
  \medskip\item[\textbf{\underline{Q6}}]  Vérifier dans une console que les positions obtenues sont bien celles demandées :
  \begin{verbatim}
@@ -441,16 +438,17 @@ On pourra aussi créer un nouveau \emph{publisher} (Annexe \ref{sec:publish}) pe
 La deuxième séance porte sur l'exploitation du jacobien dans la commande. On souhaite maintenant contrôler le robot dans l'espace opérationnel.
 
 \begin{itemize}
- \medskip\item[\textbf{\underline{Q8}}] On souhaite toujours que le robot se déplace entre $X_1=(0.065,-0.02,.61)$ et $X_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.\\
- Programmer cette stratégie dans le \texttt{case 8}, en utilisant l'une ou l'autre des procédure de calcul de MGI.
+ \medskip\item[\textbf{\underline{Q1}}] Programmer une fonction \texttt{CalcJ} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires.
+ 
+ \medskip\item[\textbf{\underline{Q3}}] On souhaite toujours que le robot se déplace entre $X_1=(0.065,-0.02,.61)$ et $X_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.
+Programmer cette stratégie, en utilisant l'une ou l'autre des procédure de calcul de MGI.
  Vérifier avec  \texttt{tf} ou  \texttt{rqt\_plot} que les points sont bien atteints.
  
- \medskip\item[\textbf{\underline{Q9}}] Programmer une fonction \texttt{CalcJacobian} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires. 
-  
- \medskip\item[\textbf{\underline{Q10}}] En cochant la case ``Show Trail'' de l'effecteur sous RViz, commenter la trajectoire obtenue.
  
- \medskip\item[\textbf{\underline{Q11}}] On souhaite réaliser le même mouvement qu'à la question Q8.
- On s'inspirera de la partie 3.2.2 de la seconde partie du cours de Robotique. On fera le mouvement opérationnel à vitesse constante dans un premier temps. Programmer cette procédure dans le \texttt{case 9}, vérifier que les points sont bien atteints et afficher la trajectoire correspondante.
+ \medskip\item[\textbf{\underline{Q4}}] En cochant la case ``Show Trail'' de l'effecteur sous RViz, commenter la trajectoire obtenue.
+ 
+ \medskip\item[\textbf{\underline{Q5}}] On souhaite réaliser le même mouvement qu'à la question Q3.
+ On s'inspirera de la partie 3.2.2 de la seconde partie du cours de Robotique. On fera le mouvement opérationnel à vitesse constante dans un premier temps. Programmer cette procédure, vérifier que les points sont bien atteints et afficher la trajectoire correspondante.
   
 
  \end{itemize}
@@ -479,7 +477,7 @@ On souhaite contrôler à la fois la position cartésienne de l'effecteur et l'a
 Pour le contrôleur on n'oubliera pas d'initialiser $N$ à 4.
 \item Valider le modèle géométrique avec le simulateur :
 \begin{itemize}
-\item \texttt{roslaunch tps\_robot scara.launch}
+\item \texttt{roslaunch tps\_robot scara4.launch}
 \end{itemize}
 \item 
 Comme en deuxième séance, utiliser le MGI pour osciller entre les positions $\tilde{P}_1=(0.3,0.1,0.2,0.4)$ et $\tilde{P}_2=(0.3,0.1,0.2,-0.4)$.
@@ -572,21 +570,21 @@ La valeur courante de la transformation entre l'effecteur et la base s'obtient p
 \subsection{Outils graphiques}
 \begin{itemize}
 \item \texttt{rqt\_graph} : affiche le graphe des nodes
- \item \texttt{rqt\_plot <topic1/valeurs1, topic2/valeurs2>} : affiche le tracé des valeurs publiées sur les topics sur une période glissante
+ \item \texttt{rqt\_plot <topic1/valeurs1, topic2/valeurs2> -p <period>} : affiche le tracé des valeurs publiées sur les topics sur une période glissante
 \end{itemize}
 
 \subsection{Créer d'autres publishers (C++)}\label{sec:publish}
 Pour avoir accès à certains résultats il peut être utile de publier de nouvelles données au sein du contrôleur. Cela permet notamment de les afficher via \texttt{rqt\_plot}.
 Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un publisher et un message sont instanciés :
 \begin{verbatim}
- ros::Publisher error_publisher;
- std_msgs::Float32MultiArray error;
+ ros::Publisher examplePub;
+ std_msgs::Float32MultiArray example;
 \end{verbatim}Dans la boucle l'attribut \texttt{data} de \texttt{example} est mis à jour et publié :
 \begin{verbatim}
- error_publisher.publish(error);
+ examplePub.publish(example);
 \end{verbatim}On peut alors afficher le graphe des variables publiées en temps réel :
 \begin{verbatim}
- rqt_plot /error/data[0],/error/data[1],/error/data[2]
+ rqt\_plot /example/data[0],/example/data[1],/example/data[2] -p 10
 \end{verbatim}
 
 
@@ -595,18 +593,22 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
 \begin{enumerate}
 \item Le simulateur et ses interfaces se lancent en exécutant un launchfile :
 \begin{itemize}
-\item \texttt{roslaunch tps\_robot turret.launch}
+\item \texttt{roslaunch tps\_robot turret3.launch}
 \end{itemize}
  Ce launchfile lance les nodes suivants :
 \begin{itemize}
 \item \texttt{/joint\_state\_publisher} : interface des sliders. Publie sur \texttt{/joint\_states} les positions articulaires correspondant aux sliders.
 \item \texttt{/robot\_state\_publisher} : reçoit les positions articulaires. À l'aide du modèle géométrique du robot, publie sur \texttt{/tf} les  matrices de passage entre les différents éléments du robot.
 \item \texttt{/rviz} : reçoit les matrices de passage pour afficher la position actuelle du robot
-\item \texttt{/joint\_control} : simule la commande bas niveau du robot.
-\end{itemize}
-\item La boucle est fermée à l'exécution du node de commande (que vous écrirez...)
+\item \texttt{/jointControl} : simule la commande bas niveau du robot.
 \begin{itemize}
-\item \texttt{/main\_control} : reçoit les positions articulaires sur \texttt{/joint\_states}. Après calcul de la loi de commande, publie la consigne de position ou de vitesse sur \texttt{/main\_control/command}.
+\item Si ce node reçoit des consignes en position ou en vitesse sur \texttt{/mainControl/command}, il les transforme en suite de positions articulaires en prenant en compte les butées articulaires et les vitesses maximum. Ces positions sont publiées sur \texttt{/jointControl/position}. Ce topic prend la main sur les sliders de \texttt{/joint\_state\_publisher}.
+\item S'il ne reçoit rien, il ne publie rien.
+\end{itemize}
+\end{itemize}
+\item La boucle est fermée à l'exécution du node de commande :
+\begin{itemize}
+\item \texttt{/mainControl} : reçoit les positions articulaires sur \texttt{/joint\_states}. Après calcul de la loi de commande, publie la consigne de position ou de vitesse sur \texttt{/mainControl/command}.
 \end{itemize}
 
 \end{enumerate}
@@ -629,55 +631,29 @@ Toutes les opérations classiques sont permises, notamment :
  \item \texttt{M.getCols()} : nombre de colonnes
  \item \texttt{M.getRows()} : nombre de lignes
 \end{itemize}
-% Il existe également une classe pour les matrices de rotation et pour les vecteurs translation :
-% \begin{verbatim}
-%  vpRotationMatrix R;
-%  vpTranslationVector t;
-% \end{verbatim}
-% Ces deux grandeurs permettent d'instancier une classe de matrice de changement de repère :
-% \begin{verbatim}
-%  vpHomogeneousMatrix M;
-%  M.buildFrom(t,R);
-% \end{verbatim}Dans ce cas on a :
-% \begin{equation*}
-%  \mathbf{M} = \left[\begin{array}{cc}
-%                      \mathbf{R} & \mathbf{t} \\ \mathbf{0}_{3\times 1} & 1
-%                     \end{array}\right]
-% \end{equation*}
-% À l'inverse, on peut aussi extraire les parties rotation et translation d'une matrice homogène
-% \begin{verbatim}
-%  M1.buildFrom(t1,R1);
-%  M2.buildFrom(t2,R2);
-%  M = M1*M2;
-%  M.extract(t);
-%  M.extract(R);
-% \end{verbatim}
-
-\section{Génération de code à partir d'un tableau de paramètres}
-\label{sec:dh}
-
-Le package \texttt{tps\_robot} contient un script permettant de générer automatiquement le code du modèle géométrique direct ainsi que du jacobien à partir 
-d'un fichier contenant le tableau des paramètres. Un exemple de tel fichier se trouve dans \texttt{tps\_robot/urdf/dh\_example.yml} :
+Il existe également une classe pour les matrices de rotation et pour les vecteurs translation :
 \begin{verbatim}
-notation: [alpha, a, theta, r]
-joint:
-    1: [0, 0, q1, 0]
-    2: [-pi/2, 0, 0, q2]
-    3: [pi/2, 0, q3, r3]
-    4: [-pi/2, a4, q4+pi/2, 0]
+ vpRotationMatrix R;
+ vpTranslationVector t;
 \end{verbatim}
-En se plaçant dans le répertoire du fichier, la génération de code se lance par:
-\begin{itemize}
- \item \texttt{rosrun tps\_robot dh\_code.py <fichier.yml>}
-\end{itemize}
-Le programme affiche alors le code C++ de la pose sous forme de matrice homogène $\mathbf{T}_{0,n}$ et celui du jacobien sous forme de matrice.
-La ligne \texttt{notation} indique dans quel ordre nous entrons les paramètres.
-
-Une ligne par articulation permet ensuite d'indiquer les paramètres de Denavit-Hartenberg modifiés.
-Les variables articulaires étant notées $q_i$, on voit dans ce fichier que les articulations 1, 3 et 4 sont des rotoïdes
-(\texttt{q} apparaît dans la colonne \texttt{theta}) lors que l'articulation 2 est prismatique (\texttt{q} apparaît dans la colonne \texttt{r}).
-
-Créer dans votre package un fichier nommé \texttt{modele.yml} et le remplir avec vos paramètres pour faire les calculs à votre place.
+Ces deux grandeurs permettent d'instancier une classe de matrice de changement de repère :
+\begin{verbatim}
+ vpHomogeneousMatrix M;
+ M.buildFrom(t,R);
+\end{verbatim}Dans ce cas on a :
+\begin{equation*}
+ \mathbf{M} = \left[\begin{array}{cc}
+                     \mathbf{R} & \mathbf{t} \\ \mathbf{0}_{3\times 1} & 1
+                    \end{array}\right]
+\end{equation*}
+À l'inverse, on peut aussi extraire les parties rotation et translation d'une matrice homogène
+\begin{verbatim}
+ M1.buildFrom(t1,R1);
+ M2.buildFrom(t2,R2);
+ M = M1*M2;
+ M.extract(t);
+ M.extract(R);
+\end{verbatim}
 
 
 \end{document}

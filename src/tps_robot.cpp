@@ -74,7 +74,6 @@ void TPSRobot::setPosition(const vpColVector &_position)
     }
 }
 
-
 // set articular velocity
 void TPSRobot::setVelocity(const vpColVector &_velocity)
 {

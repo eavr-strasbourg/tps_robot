@@ -89,15 +89,15 @@ user_call('source /opt/ros/%s/setup.bash' % ROSVERSION)
 
 
 print 'Configuration des dossiers'
-user_call('mkdir -p ros_workspace/src')
-os.chdir('%s/ros_workspace/src' % USER_HOME)
+user_call('mkdir -p ros/src')
+os.chdir('%s/ros/src' % USER_HOME)
 user_call('catkin_init_workspace')
-os.chdir('%s/ros_workspace' % USER_HOME)
+os.chdir('%s/ros' % USER_HOME)
 user_call('catkin_make')
 user_call('source ~/.bashrc')
 
 print 'Telechargement sujet de TP robotique'
-os.chdir('%s/ros_workspace/src' % USER_HOME)
+os.chdir('%s/ros/src' % USER_HOME)
 user_call('git clone https://github.com/eavr-strasbourg/tps_robot.git')
 user_call('rospack profile')
 

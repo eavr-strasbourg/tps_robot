@@ -441,7 +441,6 @@ La deuxième séance porte sur l'exploitation du jacobien dans la commande. On s
 
 \begin{itemize}
  \medskip\item[\textbf{\underline{Q8}}] Programmer la fonction \texttt{compJacobian} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires.
- Le script decrit en Annexe \ref{sec:DH} genere le code du jacobien en fonction du tableau des parametres.
  
  \medskip\item[\textbf{\underline{Q9}}] On souhaite toujours que le robot se déplace entre $P_1=(0.065,-0.02,.61)$ et $P_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.
 Programmer cette stratégie, en utilisant l'une ou l'autre des procédure de calcul de MGI.
@@ -625,7 +624,6 @@ Un exemple est donne dans le package \texttt{tps\_robot/urdf/dh\_example.yml}. P
  \item \texttt{roscd tps\_robot/urdf}
  \item \texttt{rosrun tps\_robot dh\_code.py dh\_example.yml}
 \end{itemize}
-N'hesitez pas a creer votre propre fichier YAML (extension \texttt{.yml}) dans votre package afin de ne pas avoir a faire les calculs a la main. 
 
 
 \section{Utilisation des classes de ViSP}

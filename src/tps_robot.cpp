@@ -6,8 +6,9 @@
 using std::string;
 using std::cout;
 using std::endl;
+using TPS::Robot;
 
-TPSRobot::TPSRobot(ros::NodeHandle &_nh)
+Robot::Robot(ros::NodeHandle &_nh)
 {    
     // parse URDF to get robot data (name, DOF, joint limits, etc.)
     urdf::Model model;
@@ -39,12 +40,12 @@ TPSRobot::TPSRobot(ros::NodeHandle &_nh)
 
     // initialise ROS topics: publisher for command, subscriber for position measurement
     cmd_publisher_ = _nh.advertise<sensor_msgs::JointState>("/main_control/command", 1000);
-    position_subscriber_ = _nh.subscribe("/joint_states", 1000, &TPSRobot::onReadPosition, this);
+    position_subscriber_ = _nh.subscribe("/joint_states", 1000, &Robot::onReadPosition, this);
     ros::spinOnce();
 }
 
 // read joint_state topic and write articular position
-void TPSRobot::onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg)
+void Robot::onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg)
 {
     // parse message to joint position, check for joint names
     for(unsigned int i=0;i<n_;++i)
@@ -57,10 +58,10 @@ void TPSRobot::onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg)
 
 
 // set articular position
-void TPSRobot::setPosition(const vpColVector &_position)
+void Robot::setPosition(const vpColVector &_position)
 {
     if(_position.getRows() != n_)
-        std::cout << "TPSRobot::setPosition: bad dimension" << std::endl;
+        std::cout << "Robot::setPosition: bad dimension" << std::endl;
     else
     {
         cmd_.header.stamp = ros::Time::now();
@@ -75,10 +76,10 @@ void TPSRobot::setPosition(const vpColVector &_position)
 }
 
 // set articular velocity
-void TPSRobot::setVelocity(const vpColVector &_velocity)
+void Robot::setVelocity(const vpColVector &_velocity)
 {
     if(_velocity.getRows() != n_)
-        std::cout << "TPSRobot::setVelocity: bad dimension" << std::endl;
+        std::cout << "Robot::setVelocity: bad dimension" << std::endl;
     else
     {
         cmd_.header.stamp = ros::Time::now();

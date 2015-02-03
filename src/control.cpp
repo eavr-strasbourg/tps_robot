@@ -2,68 +2,72 @@
 #include <tps_robot/tps_robot.h>
 #include <ros/ros.h>
 #include <std_msgs/Float32MultiArray.h>
-#include <visp/vpHomogeneousMatrix.h>
 
 using namespace std;
-
-// debut du main
+using TPS::Robot;
 
 int main(int argc, char ** argv)
 {
     // initialisation du node ROS
     ros::init(argc, argv, "main_control");
     ros::start();
-    ros::NodeHandle nh;
+    ros::NodeHandle rosNH;
     const double rate = 30;
     ros::Rate loop(rate);
 
     // initialisation de la classe robot
-    TPSRobot robot(nh);
+    Robot robot(rosNH);
     const unsigned int N = robot.getDOFs();
-    const std::string name = robot.getName();
 
-    // initialisation des parametres
-    // quelle question est a realiser
-    int question;
-    nh.param<int>("/Q", question, 0);
+    // Tache a realiser, defaut 0 (affiche seulement)
+    int question = 0;
+    rosNH.param("/Q", question, 0);
 
-    // frequence consigne
+    // Temps au bout duquel changer de consigne, defaut 10 s
     double Ts;
-    nh.param<double>("/Ts", Ts, 10);
+    rosNH.param("/Ts", Ts, 10.);
 
-    // gain du controle en vitesse
+    // Gain du controle en vitesse, defaut 1
     double lambda;
-    nh.param<double>("/lambda", lambda, 1);
-    // fin initialisation des parametres
+    rosNH.param("/lambda", lambda, 1.);
 
-    // *** exemple d'un publisher supplementaire pour l'erreur de position
+    // *** exemple d'un publisher supplementaire : erreur de position
     // declaration du publisher
-    ros::Publisher error_publisher = nh.advertise<std_msgs::Float32MultiArray>("/error", 1000);
+    ros::Publisher erreurPub = rosNH.advertise<std_msgs::Float32MultiArray>("/erreur", 1000);
     // declaration du message a publier
-    std_msgs::Float32MultiArray error;error.data.resize(3);
+    std_msgs::Float32MultiArray erreur;erreur.data.resize(3);
     // *** fin example
 
     // variables utilisees dans la boucle
     unsigned int iter = 0;      // iterations
     vpColVector q(N);           // vecteur des positions articulaires
-    vpColVector p(6);           // vecteur de la position operationelle
+    vpColVector p(N);           // vecteur de la vraie position (X Y Z R P Y)
     vpColVector qCommand(N);    // consigne des positions articulaires
     vpColVector vCommand(N);    // consigne en vitesse
 
     // points entre lesquels osciller
     vpColVector p1(N), p2(N);
-    // definir ici les valeurs des points a atteindre
-    if(name == "turret")
-    {   // p1[0] = ...
+    // definir ici les valeurs des points
+    switch(N)
+    {
+    case 3:
+
+        break;
+    case 4:
+
+        break;
+    default:
 
     }
-    else
-    {   // p1[0] = ...
+    const unsigned int pas = 100; // pas pour generation de trajectoire
+    const double invPas = 1./pas;
+    const double vMax = 1; // vitesse maximum dans espace operationnel
 
-    }
 
     vpColVector pd = p1, p0 = p2;
     unsigned int iterSwitch;
+    vpMatrix J;
+    unsigned int avance;
     
     // boucle de commande
     while(ros::ok())
@@ -71,78 +75,75 @@ int main(int argc, char ** argv)
         // incrementation de l'iteration
         iter++;
         // update parameters
-        nh.getParam("/Q", question);
-        nh.getParam("/Ts", Ts);
-        nh.getParam("/lambda", lambda);
-
-        // switch entre p1 et p2 en fonction de la frequence
+        rosNH.getParam("/Q", question);
+        rosNH.getParam("/Ts", Ts);
+        rosNH.getParam("/lambda", lambda);
         iterSwitch = Ts*rate;
+
+        // switch entre p1 et p2
         if(iter % iterSwitch == 0)
         {
             p0 = pd;
             if(iter % (2*iterSwitch) == 0) {pd = p2;}
             else                           {pd = p1;}
         }
-        // a partir d'ici pd est le point a atteindre et p0 est le point de depart
+        // pd est le point a atteindre et p0 est le point de depart
 
         
         // lecture des positions articulaires
         robot.getPosition(q);
         cout << "Lecture positions articulaires : " << q.t() << endl;
 
+
+        // calcul MGD
+        robot.compDK(q, p);
+
+
         // *** Modifier ici pour generer une commande en position (qCommand) ou en vitesse (vCommand)
 
-        // differents cas en fonction de la question
+        // switch question
         switch(question)
         {
-        case 1: // question Q1, affiche juste le MGD et n'envoie pas de commande
+        case 0: // question Q2, affiche juste le MGD et n'envoie pas de commande
 
             break;
 
+        case 1: // oscille entre p1 et p2 dans l'espace articulaire
 
-        case 4: // question Q4, oscille entre p1 et p2 dans l'espace articulaire
-
+            // decommenter pour envoyer la commande en position
+            //robot.setPosition(qCommand);
             break;
+            
+        case 2: // oscille avec generation de trajectoire
 
-
-        case 8: // question Q8, oscille avec generation de trajectoire
-
-                break;
-
-
-        case 9: // question Q9, oscille avec commande en vitesse
-
+            // decommenter pour envoyer la commande en position
+            //robot.setPosition(qCommand);
             break;
+            
+        case 3: // oscille avec commande en vitesse
 
+            // decommenter pour envoyer la commande en vitesse
+            //robot.setVelocity(vCommand);
+            break;
 
         default:
             cout << "question = " << question << ", rien a faire" << endl;
-            break;
         }
         
-
-        // decommenter pour envoyer la commande en position
-        //robot.setPosition(qCommand);
-        
-        // decommenter pour envoyer la commande en vitesse
-        //robot.setVelocity(vCommand);
         
         
         
         
         // *** exemple d'un publisher supplementaire
-        // mise a jour de error.data
+        // mise a jour de exemple.data
         for(unsigned int i=0;i<3;++i)
-            error.data[i] = p[i] - pd[i];
+            erreur.data[i] = p[i] - pd[i];
         // publication du message
-        error_publisher.publish(error);
+        erreurPub.publish(erreur);
         // *** fin example
-
 
         // fin de la boucle
         ros::spinOnce();
         loop.sleep();
     }
 }
-
-

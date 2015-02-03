@@ -45,9 +45,9 @@ include
 add_library(${PROJECT_NAME} src/tps_robot.cpp include/tps_robot/tps_robot.h)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${VISP_LIBRARY})
 
-add_executable(simu4points src/simu4points.cpp)
-target_link_libraries(simu4points ${PROJECT_NAME}  ${OpenCV_LIBS})
+add_executable(simu_4points src/simu_4points.cpp)
+target_link_libraries(simu_4points ${PROJECT_NAME}  ${OpenCV_LIBS})
 
-add_executable(control src/control.cpp src/modeles.cpp)
-target_link_libraries(control ${PROJECT_NAME})
+#add_executable(control src/control.cpp src/modeles.cpp)
+#target_link_libraries(control ${PROJECT_NAME})
 

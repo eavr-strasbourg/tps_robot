@@ -20,15 +20,15 @@
 #include <sensor_msgs/Image.h>
 
 // create a class to get topics
-class rosListener
+class Listener
 {
 private:
     vpTranslationVector T;
 
 public:
-    inline rosListener() {T[2] = 1;}
+    inline Listener() {T[2] = 1;}
 
-    void rosReadSetPoint(const std_msgs::Float32MultiArray& msg)
+    void readSetPoint(const std_msgs::Float32MultiArray& msg)
     {
         for(unsigned int i=0;i<2;++i)
             T[i] = msg.data[i];
@@ -49,8 +49,8 @@ main(int argc, char ** argv)
     ros::Rate loop(rosRate);
 
     // Subscriber : setpoint
-    rosListener listener;
-    ros::Subscriber setpointSub = rosNH.subscribe("/setpoint", 1000, &rosListener::rosReadSetPoint, &listener);
+    Listener listener;
+    ros::Subscriber setpointSub = rosNH.subscribe("/setpoint", 1000, &Listener::readSetPoint, &listener);
 
     // Publishers : position / error
     ros::Publisher errorPub = rosNH.advertise<std_msgs::Float32MultiArray>("/error", 1000);
@@ -235,7 +235,7 @@ main(int argc, char ** argv)
         imgPub.publish(imgMsg);
 
 
-        // fin de la boucle
+        // end of the loop
         ros::spinOnce();
         loop.sleep();
     }

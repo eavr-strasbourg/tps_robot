@@ -13,13 +13,15 @@
   Reçoit des commandes en vitesse / position et les envoie sur le bridge avant interprétation par le simulateur.
 */
 
+namespace TPS
+{
 
-class TPSRobot {
+class Robot {
 
 public:
     // --- These methods are defined in tps_robot.cpp ---
     // constructor
-    TPSRobot(ros::NodeHandle &_nh);
+    Robot(ros::NodeHandle &_nh);
     // get number of dof
     inline unsigned int getDOFs() {return n_;}
     // get name
@@ -39,13 +41,13 @@ public:
     // To be completed by the students
 
     // calcul modele geometrique direct
-    int calcMGD(const vpColVector &q, vpColVector &pose);
+    int compDK(const vpColVector &q, vpColVector &pose);
 
     // calcul modele geometrique inverse analytique ou iteratif
-    int calcMGI(const vpColVector &q0, const vpColVector &pose_des, vpColVector &q);
+    int compIK(const vpColVector &q0, const vpColVector &pose_des, vpColVector &q);
 
     // calcul  Jacobien
-    int calcJacobian(const vpColVector &q, vpMatrix &J);
+    int compJacobian(const vpColVector &q, vpMatrix &J);
 
 protected:
     unsigned int n_;
@@ -61,6 +63,8 @@ protected:
     // ROS functions
     void onReadPosition(const sensor_msgs::JointState::ConstPtr& _msg);
 };
+
+}
 
 
 

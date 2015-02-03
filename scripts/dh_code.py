@@ -102,7 +102,15 @@ def exportCpp(M, s='M',cDef={},cUse={}):
                         ms, cDef, cUse = replaceFctQ(str(sympy.simplify(M[i,j])), cDef, cUse)
                         out.append(s + sRows + sCols + ' = ' + ms + ';')
         return out, cDef, cUse
-    
+        
+def simp_matrix(M):
+    '''
+    simplify matrox for old versions of sympy
+    '''
+    for i in xrange(M.rows):
+        for j in xrange(M.cols):
+            M[i,j] = sympy.simplify(M[i,j])
+    return M    
 
 if __name__ == '__main__':
     
@@ -114,9 +122,12 @@ if __name__ == '__main__':
         return sympy.Matrix(R)
 
     def Homogeneous(t, theta, u):
-        return sympy.Matrix(concatenate((concatenate((Rot(theta,u), t*u),1), sympy.Matrix([[0,0,0,1]])),0))
-    
-    
+        #try:
+        M = simp_matrix((Rot(theta,u).row_join(t*u)).col_join(sympy.Matrix([[0,0,0,1]])))
+        #except:
+        #    M = (Rot(theta,u).row_join(t*u)).col_join(sympy.Matrix([[0,0,0,1]]))
+        return M
+        
     sq = 'q'
     sP = 'P'
     sM = 'T'
@@ -186,7 +197,7 @@ if __name__ == '__main__':
     T = []      # relative T(i-1,i) 
     T0 = []     # absolute T(0,i)
     for joint in robot.joint.itervalues():
-        T.append(sympy.simplify(Homogeneous(joint[iA], joint[iAlpha],X) * Homogeneous(joint[iR], joint[iTheta],Z)))
+        T.append(Homogeneous(joint[iA], joint[iAlpha],X) * Homogeneous(joint[iR], joint[iTheta],Z))
         if len(T0) == 0:
             T0.append(T[-1])
         else:
@@ -213,7 +224,7 @@ if __name__ == '__main__':
     for i in xrange(dof):
         Jv = joint_prism[i]*z[i] + (1-joint_prism[i])*sk(z[i])*(p[dof-1]-p[i-1])
         Jw = (1-joint_prism[i]) * z[i]
-        Js = sympy.Matrix(concatenate((Js,sympy.Matrix(concatenate((Jv,Jw),0))),1))
+        Js = simp_matrix(Js.row_join(Jv.col_join(Jw)))
     print ''
     '''
     l = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']

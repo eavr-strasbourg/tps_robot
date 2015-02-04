@@ -20,7 +20,7 @@
 \pagestyle{fancyplain}
 
 
-\newcommand{\school}{Télécom Physique Strasbourg, TIC-Santé 2ème année}
+\newcommand{\school}{Télécom Physique Strasbourg, TIC-Santé 2ème année hop hop}
 \renewcommand{\year}{2014-2015}
 
 \lhead[]{\fancyplain{}{\scriptsize\school}}
@@ -404,7 +404,7 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
 
 \begin{itemize}
  \medskip\item[\textbf{\underline{Q1}}] Programmer la fonction \texttt{compDK}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires. La fonction est à coder dans \texttt{modeles.cpp}.
- Afficher dans la console la position ainsi obtenue.\\
+ Dans le code principal (\texttt{control.cpp}), afficher dans la console la position ainsi obtenue.\\
  En cas d'erreur on pourra utiliser le script \texttt{dh\_code.py} qui genere le code correspondant a un tableau de Denavit-Hartenberg, voir Annexe \ref{sec:DH}.
 
 
@@ -419,6 +419,8 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  entre les points $P_1=(-0.065,-0.02,0.61)$ et $P_2=(-0.046, -0.046, 0.6)$. \\
  Notez qu'il suffit de definir les points $P_1$ et $P_2$, le code inversant la consigne en fonction de la frequence etant deja ecrit en debut de boucle.
  Ce code fait qu'a tout instant, $P_0$ est l'ancienne consigne (le point d'ou on vient) et $P_d$ est la nouvelle (le point ou on va).
+ 
+ Utiliser le paramètre \texttt{Q} pour passer d'une question à l'autre pendant l'exécution du code (block \texttt{switch} dans \texttt{control.cpp}).
  
   \medskip\item[\textbf{\underline{Q5}}] Afficher le graphe des nodes et des topics. Sachant que le node \texttt{joint\_control} convertit des consignes de position ou de vitesse et publie la position articulaire du robot sur \texttt{/joint\_control/position}, commenter sur les conflits possibles avec l'interface des sliders \texttt{/joint\_state\_publisher}.
  
@@ -616,16 +618,16 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
 
 \end{enumerate}
 
-\section{Generation de code avec parametre de Denavit-Hartenberg}
+\section{Génération de code avec paramètre de Denavit-Hartenberg}
 \label{sec:DH}
 
-Le script \texttt{dh\_code.py} permet de generer le code C++ du modele geometrique direct et du jacobien a partir du tableau des parametres.\\
-Un exemple est donne dans le package \texttt{tps\_robot/urdf/dh\_example.yml}. Pour le lancer :
+Le script \texttt{dh\_code.py} permet de générer le code C++ du modele géométrique direct et du jacobien à partir du tableau des paramètres.\\
+Un exemple est donné dans le package \texttt{tps\_robot/urdf/dh\_example.yml}. Pour le lancer :
 \begin{itemize}
  \item \texttt{roscd tps\_robot/urdf}
  \item \texttt{rosrun tps\_robot dh\_code.py dh\_example.yml}
 \end{itemize}
-N'hesitez pas a creer votre propre fichier YAML (extension \texttt{.yml}) dans votre package afin de ne pas avoir a faire les calculs a la main. 
+N'hésitez pas a créer votre propre fichier YAML (extension \texttt{.yml}) dans votre package afin de ne pas avoir à faire les calculs a la main. 
 
 
 \section{Utilisation des classes de ViSP}

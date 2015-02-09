@@ -363,27 +363,12 @@ L'objectif du TP est d'utiliser la mesure de position articulaire pour calculer 
 \item \texttt{control.cpp} pour l'algorithme de commande
 \end{itemize}
 
-\begin{enumerate}
-  \item Compilation du package personnel : 
-  \begin{itemize}
-   \item En ligne de commande, depuis le répertoire \texttt{\ros}: \texttt{catkin\_make}
-   \end{itemize}
-     \item Exécution du node personnel
-  \begin{itemize}
-  \item Sous Qt Creator : icône de triangle vert en bas à gauche
-  \item En ligne de commande :  \texttt{rosrun \bin~control}
-   \item Sous ROS, le nom de ce node est \texttt{/main\_control}
-   \item Il est possible de lancer le programme en mode debug avec le triangle vert surmonté d'un insecte
-  \end{itemize}
-\end{enumerate}
-
-Les différents nodes et topics interagissant dans le TP sont détaillés en Annexe \ref{sec:nodes}.
-Une fois lancé, le node tel qu'il est ne fait qu'attendre la publication des positions articulaires du robot.
-
 
 \subsection{Visualisation avec RViz} 
   
-Compiler et lancer le simulateur : 
+  \begin{enumerate}
+  
+\item Lancer le simulateur : 
  \begin{itemize}
  \item \texttt{roslaunch tps\_robot turret3.launch}
  \end{itemize}
@@ -398,6 +383,21 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  \caption{Lecture de la situation de l'effecteur dans RViz}
  \label{fig:rviz}
 \end{figure} 
+
+  \item Compilation du package personnel : 
+  \begin{itemize}
+   \item En ligne de commande, depuis le répertoire \texttt{\ros}: \texttt{catkin\_make}
+   \end{itemize}
+     \item Exécution du node personnel
+  \begin{itemize}
+  \item En ligne de commande :  \texttt{rosrun \bin~control}
+   \item Sous ROS, le nom de ce node est \texttt{/main\_control}
+   \item Il est possible de lancer le programme en mode debug avec le triangle vert surmonté d'un insecte
+  \end{itemize}
+\end{enumerate}
+
+Les différents nodes et topics interagissant dans le TP sont détaillés en Annexe \ref{sec:nodes}.
+Une fois lancé, le node tel qu'il est ne fait qu'attendre la publication des positions articulaires du robot.
  
  \subsection{Travail demandé}
  \label{travail2s}
@@ -405,7 +405,7 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
 \begin{itemize}
  \medskip\item[\textbf{\underline{Q1}}] Programmer la fonction \texttt{compDK}\footnote{ L'Annexe \ref{anx:cpp} rappelle les différents prototypes de fonction en C++} qui calcule la position opérationnelle en fonction du vecteur des variables articulaires. La fonction est à coder dans \texttt{modeles.cpp}.
  Dans le code principal (\texttt{control.cpp}), afficher dans la console la position ainsi obtenue.\\
- En cas d'erreur on pourra utiliser le script \texttt{dh\_code.py} qui genere le code correspondant a un tableau de Denavit-Hartenberg, voir Annexe \ref{sec:DH}.
+ En cas d'erreur on pourra utiliser le script \texttt{dh\_code.py} qui génère le code correspondant à un tableau de Denavit-Hartenberg, voir Annexe \ref{sec:DH}.
 
 
   \medskip\item[\textbf{\underline{Q2}}] En jouant sur les sliders (fenêtre \texttt{Joint State Publisher}), comparer en plusieurs endroits les valeurs de votre programme avec celles indiquées par le simulateur (Fig.\ref{fig:rviz}).
@@ -417,8 +417,8 @@ En cochant la case ``Show Trail'', RViz affiche également la trajectoire suivie
  Coder la simulation alternant toutes les 10 secondes\footnote{La fréquence en Hz est déjà indiquée dans le code par l'instruction \texttt{ros::Rate loop(30)}.
  10 secondes correspondent donc à 300 itérations dans la boucle while.}
  entre les points $P_1=(-0.065,-0.02,0.61)$ et $P_2=(-0.046, -0.046, 0.6)$. \\
- Notez qu'il suffit de definir les points $P_1$ et $P_2$, le code inversant la consigne en fonction de la frequence etant deja ecrit en debut de boucle.
- Ce code fait qu'a tout instant, $P_0$ est l'ancienne consigne (le point d'ou on vient) et $P_d$ est la nouvelle (le point ou on va).
+ Notez qu'il suffit de définir les points $P_1$ et $P_2$, le code inversant la consigne en fonction de la fréquence étant dejà écrit en début de boucle.
+ Ce code fait qu'à tout instant, $P_0$ est l'ancienne consigne (le point d'où on vient) et $P_d$ est la nouvelle (le point où on va).
  
  Utiliser le paramètre \texttt{Q} pour passer d'une question à l'autre pendant l'exécution du code (block \texttt{switch} dans \texttt{control.cpp}).
  
@@ -443,7 +443,7 @@ La deuxième séance porte sur l'exploitation du jacobien dans la commande. On s
 
 \begin{itemize}
  \medskip\item[\textbf{\underline{Q8}}] Programmer la fonction \texttt{compJacobian} qui calcule la matrice jacobienne (classe \texttt{vpMatrix}) en fonction du vecteur des variables articulaires.
- Le script decrit en Annexe \ref{sec:DH} genere le code du jacobien en fonction du tableau des parametres.
+ Le script décrit en Annexe \ref{sec:DH} génère le code du jacobien en fonction du tableau des paramètres.
  
  \medskip\item[\textbf{\underline{Q9}}] On souhaite toujours que le robot se déplace entre $P_1=(0.065,-0.02,.61)$ et $P_2=(-0.046, -0.046,  0.6)$., mais en allant de point en point de l'espace opérationnel, à l'aide du modèle géométrique inverse.
 Programmer cette stratégie, en utilisant l'une ou l'autre des procédure de calcul de MGI.

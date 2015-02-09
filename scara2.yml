@@ -1,0 +1,7 @@
+notation: [a, alpha, r, theta]
+joint:
+    1: [0, 0, h-f, q1]
+    2: [a, 0, f, q2+pi/2]
+    3: [0, pi/2, b, q3]
+    4: [0, pi/2, c+q4, 0]
+    

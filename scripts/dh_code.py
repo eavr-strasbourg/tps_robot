@@ -15,6 +15,7 @@ import sympy
 from sympy.parsing.sympy_parser import parse_expr
 from pylab import concatenate
 import re
+import multiprocessing as mp
 
 # human sorting
 def human_sort(l):
@@ -27,6 +28,27 @@ debug = False
 def prtDebug(s1, s2=''):
         if debug:
                 print s1, s2
+
+
+def simp_matrix(M):
+    '''
+    simplify matrix for old versions of sympy
+    '''
+    for i in xrange(M.rows):
+        for j in xrange(M.cols):
+            M[i,j] = sympy.simplify(M[i,j])
+    return M    
+
+def compute_Ji(joint_prism, u, p, i, output):
+    if joint_prism[i]:
+        Jv = simp_matrix(u[i])
+        Jw = sympy.Matrix([[0,0,0]]).reshape(3,1)
+    else:
+        Jv = simp_matrix(sk(u[i])*(p[dof-1]-p[i-1]))
+        Jw = simp_matrix(u[i])
+    print '   J_%i' % (i+1)
+    output.put((i, Jv.col_join(Jw)))
+    #return Jv.col_join(Jw)
 
 class Bunch(object):
   def __init__(self, adict):
@@ -102,17 +124,12 @@ def exportCpp(M, s='M',cDef={},cUse={}):
                         ms, cDef, cUse = replaceFctQ(str(sympy.simplify(M[i,j])), cDef, cUse)
                         out.append(s + sRows + sCols + ' = ' + ms + ';')
         return out, cDef, cUse
-        
-def simp_matrix(M):
-    '''
-    simplify matrox for old versions of sympy
-    '''
-    for i in xrange(M.rows):
-        for j in xrange(M.cols):
-            M[i,j] = sympy.simplify(M[i,j])
-    return M    
 
 if __name__ == '__main__':
+    
+    X = sympy.Matrix([1,0,0]).reshape(3,1)
+    Y = sympy.Matrix([0,1,0]).reshape(3,1)
+    Z = sympy.Matrix([0,0,1]).reshape(3,1)
     
     def sk(u):
         return sympy.Matrix([[0,-u[2],u[1]],[u[2],0,-u[0]],[-u[1],u[0],0]])
@@ -120,10 +137,13 @@ if __name__ == '__main__':
     def Rot(theta,u):
         R = sympy.cos(theta)*sympy.eye(3) + sympy.sin(theta)*sk(u) + (1-sympy.cos(theta))*(u*u.transpose())
         return sympy.Matrix(R)
+    
+    def Rxyz(rpy):
+        return Rot(rpy[0],X)*Rot(rpy[1],Y)*Rot(rpy[2],Z)
 
-    def Homogeneous(t, theta, u):
+    def Homogeneous(t, R):
         #try:
-        M = simp_matrix((Rot(theta,u).row_join(t*u)).col_join(sympy.Matrix([[0,0,0,1]])))
+        M = simp_matrix((R.row_join(t)).col_join(sympy.Matrix([[0,0,0,1]])))
         #except:
         #    M = (Rot(theta,u).row_join(t*u)).col_join(sympy.Matrix([[0,0,0,1]]))
         return M
@@ -151,6 +171,11 @@ if __name__ == '__main__':
     name = 'robot'
     if 'name'in robot.keys:
             name = robot.name
+            
+    # get convention
+    conv = 'dh'
+    if 'convention' in robot.keys:
+        conv = robot.convention
 
     # get notations
     if 'q' in robot.keys:
@@ -160,7 +185,7 @@ if __name__ == '__main__':
             sM = robot.P
     if 'J' in robot.keys:
             sJ = robot.J
-
+            
     # get ordering
     if 'notation' in robot.keys:
             iAlpha = robot.notation.index('alpha')
@@ -172,69 +197,98 @@ if __name__ == '__main__':
             iA = 1
             iR = 2
             iTheta = 3
-    # change into symbolic
-    joint_prism = []
-    for joint in robot.joint.itervalues():
-        if type(joint[iR]) == str:
-            if 'q' in joint[iR]:
-                joint_prism.append(1)
-        if type(joint[iTheta]) == str:
-            if 'q' in joint[iTheta]:
-                joint_prism.append(0)
-        for i in xrange(4):
-            if type(joint[i]) == str:
-                joint[i] = parse_expr(joint[i])
             
-                
+    # change into symbolic
     print ''
+    print 'Building intermediary matrices...'
     
-    print 'Building model...'
-    # transform matrices
-    X = sympy.Matrix([1,0,0]).reshape(3,1)
-    Z = sympy.Matrix([0,0,1]).reshape(3,1)
-
+    joint_prism = []     # 0 = revolute, 1 = prismatic
+    T = []               # relative T(i-1,i) 
+    joint_u = []         # joint axis
+    
+    if conv == 'dh':
+        for joint in robot.joint.itervalues():
+            if type(joint[iR]) == str:
+                if 'q' in joint[iR]:
+                    joint_prism.append(1)
+            if type(joint[iTheta]) == str:
+                if 'q' in joint[iTheta]:
+                    joint_prism.append(0)     
+            for i in xrange(4):
+                if type(joint[i]) == str:
+                    joint[i] = parse_expr(joint[i])
+            # fixed matrix
+            T.append(Homogeneous(joint[iA]*X, Rot(joint[iAlpha],X)) * Homogeneous(joint[iR]*Z, Rot(joint[iTheta],Z)))
+            # joint axis
+            joint_u.append(Z)
+    elif conv == 'urdf':
+        for i in robot.joint:
+            joint = robot.joint[i]
+            # joint axis
+            joint_u.append(sympy.Matrix([parse_expr(str(v)) for v in joint['axis']]).reshape(3,1))
+            # joint type
+            joint_prism.append(joint['type'] == 'prismatic')
+            # fixed matrix
+            xyz = sympy.Matrix([parse_expr(str(v)) for v in joint['xyz']]).reshape(3,1)
+            rpy = [parse_expr(str(v)) for v in joint['rpy']]
+            q = sympy.Symbol('q%i'%i)
+            if joint_prism[-1]:
+                T.append(Homogeneous(xyz, Rxyz(rpy)) * Homogeneous(q*joint_u[-1], Rot(0, X)))
+            else:
+                T.append(Homogeneous(xyz, Rxyz(rpy)) * Homogeneous(0*X, Rot(q, joint_u[-1])))
+    else:
+        print 'Unknown convention', conv
+        sys.exit(0)                                       
+                
+                
     # Transform matrices
-    T = []      # relative T(i-1,i) 
+    print ''
+    print 'Building direct kinematic model...'    
     T0 = []     # absolute T(0,i)
-    for joint in robot.joint.itervalues():
-        T.append(Homogeneous(joint[iA], joint[iAlpha],X) * Homogeneous(joint[iR], joint[iTheta],Z))
+    for i in xrange(dof):
         if len(T0) == 0:
-            T0.append(T[-1])
+            T0.append(T[i])
         else:
-            T0.append(T0[-1]*T[-1])
-        
-    # End-effector pose XYZ RPY
-    Ps = list(T0[-1][:3,3])                                                                                 # XYZ
-    Ps.append(sympy.atan2(-T0[-1][0,2],T0[-1][1,2]))                                                           # Roll
-    Ps.append(sympy.atan2(T0[-1][0,2]*sympy.sin(Ps[3])-T0[-1][1,2]*sympy.cos(Ps[3]),T0[-1][2,2]))                   # Pitch
-    Ps.append(sympy.atan2(-T0[-1][0,1]*sympy.cos(Ps[3])-T0[-1][1,1]*sympy.sin(Ps[3]),T0[-1][0,0]*sympy.cos(Ps[3])+T0[-1][1,0]*sympy.sin(Ps[3]))) # Yaw
-        
+            T0.append(simp_matrix(T0[-1]*T[i]))
+            print '  T %i/0' % (i+1)
+             
     # Jacobian   
     # Rotation part
+    print ''
+    print 'Building differential kinematic model...'
     R0 = [M[:3,:3] for M in T0]    
     # origin part
-    p = []
-    for i in xrange(dof):
-        p.append(T0[i][:3,3])
+    p = [T0[i][:3,3] for i in xrange(dof)]
     p.append(sympy.Matrix([[0],[0],[0]]))
-    z = [R*Z for R in R0]
+    u = [R0[i]*joint_u[i] for i in xrange(dof)] # joint axis expressed in base frame
     # build Jacobian
+    
+    output = mp.Queue()
+    processes = [mp.Process(target=compute_Ji, args=(joint_prism, u, p, i, output)) for i in xrange(dof)]
+    for proc in processes:
+        proc.start()
+    for proc in processes:
+        proc.join()
+
     Js = sympy.Matrix()
     Js.rows = 6
+    iJ = [output.get() for proc in processes]
     for i in xrange(dof):
-        Jv = joint_prism[i]*z[i] + (1-joint_prism[i])*sk(z[i])*(p[dof-1]-p[i-1])
-        Jw = (1-joint_prism[i]) * z[i]
-        Js = simp_matrix(Js.row_join(Jv.col_join(Jw)))
+        for iJi in iJ:
+            if iJi[0] == i:
+                Js = Js.row_join(iJi[1])
     print ''
-    '''
-    l = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
-    for i in xrange(6):
-        print l[i], ':', sympy.simplify(Ps[i])
-    '''
+   
     print ''
     print 'Building pose C code...'
     if 'pose' in robot.keys:
         P = sympy.Matrix([0]*len(robot.pose))
+        # End-effector pose XYZ RPY
+        Ps = list(T0[-1][:3,3])                                                                                 # XYZ
+        Ps.append(sympy.atan2(-T0[-1][0,2],T0[-1][1,2]))                                                           # Roll
+        Ps.append(sympy.atan2(T0[-1][0,2]*sympy.sin(Ps[3])-T0[-1][1,2]*sympy.cos(Ps[3]),T0[-1][2,2]))                   # Pitch
+        Ps.append(sympy.atan2(-T0[-1][0,1]*sympy.cos(Ps[3])-T0[-1][1,1]*sympy.sin(Ps[3]),T0[-1][0,0]*sympy.cos(Ps[3])+T0[-1][1,0]*sympy.sin(Ps[3]))) # Yaw
+    
         for i,p in enumerate(robot.pose):
                 if p == 'x':
                         P[i] = Ps[0]
@@ -279,3 +333,15 @@ if __name__ == '__main__':
     cCode(Jlines)
     print '    // End of Jacobian code'
     
+    fixed_M = {'wMe':'end-effector', 'bM0':'base frame'}
+    for key in fixed_M:
+        if key in robot.keys:
+            print ''
+            print 'Building %s code...' % fixed_M[key]
+            xyz = sympy.Matrix([parse_expr(str(v)) for v in robot.wMe['xyz']]).reshape(3,1)
+            rpy = [parse_expr(str(v)) for v in robot.wMe['rpy']]
+            Mlines, Mdef, Muse = exportCpp(Homogeneous(xyz, Rxyz(rpy)), 'wMe')
+            print ''
+            print '    // Generated %s code' % fixed_M[key]
+            cCode(Mlines)
+            print '    // End of %s code' % fixed_M[key]

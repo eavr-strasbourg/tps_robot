@@ -322,7 +322,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-q', metavar='q', help='How the joint vector appears in the code',default='q')
     parser.add_argument('-T', metavar='T', help='How the pose matrix appears in the code',default='T')
-    parser.add_argument('-J', metavar='J', help='How the Jacobian matrix appears in the code',default='J')    
+    parser.add_argument('-J', metavar='J', help='How the Jacobian matrix appears in the code',default='J') 
+    parser.add_argument('--only-fixed', action='store_true', help='Only computes the fixed matrices, before and after the arm',default=False)
     args = parser.parse_args()
 
     # check robot description file
@@ -349,61 +350,62 @@ if __name__ == '__main__':
     dof = len(T)
     
     # Transform matrices
-    print ''
-    print 'Building direct kinematic model...'    
-    T0 = []     # absolute T(0,i)
-    for i in xrange(dof):
-        if len(T0) == 0:
-            T0.append(T[i])
-        else:
-            T0.append(simp_matrix(T0[-1]*T[i]))
-        print '  T %i/0' % (i+1)
-            
-    # Jacobian   
-    # Rotation part
-    print ''
-    print 'Building differential kinematic model...'
-    R0 = [M[:3,:3] for M in T0]    
-    # origin part
-    p = [T0[i][:3,3] for i in xrange(dof)]
-    p.append(sympy.Matrix([[0],[0],[0]]))
-    u0 = [R0[i]*u[i] for i in xrange(dof)] # joint axis expressed in base frame
-    # build Jacobian
-    
-    output = mp.Queue()
-    processes = [mp.Process(target=compute_Ji, args=(prism, u0, p, i, output)) for i in xrange(dof)]
-    for proc in processes:
-        proc.start()
-    for proc in processes:
-        proc.join()
+    if not args.only_fixed:
+        print ''
+        print 'Building direct kinematic model...'    
+        T0 = []     # absolute T(0,i)
+        for i in xrange(dof):
+            if len(T0) == 0:
+                T0.append(T[i])
+            else:
+                T0.append(simp_matrix(T0[-1]*T[i]))
+            print '  T %i/0' % (i+1)
+                
+        # Jacobian   
+        # Rotation part
+        print ''
+        print 'Building differential kinematic model...'
+        R0 = [M[:3,:3] for M in T0]    
+        # origin part
+        p = [T0[i][:3,3] for i in xrange(dof)]
+        p.append(sympy.Matrix([[0],[0],[0]]))
+        u0 = [R0[i]*u[i] for i in xrange(dof)] # joint axis expressed in base frame
+        # build Jacobian
+        
+        output = mp.Queue()
+        processes = [mp.Process(target=compute_Ji, args=(prism, u0, p, i, output)) for i in xrange(dof)]
+        for proc in processes:
+            proc.start()
+        for proc in processes:
+            proc.join()
 
-    Js = sympy.Matrix()
-    Js.rows = 6
-    iJ = [output.get() for proc in processes]
-    for i in xrange(dof):
-        for iJi in iJ:
-            if iJi[0] == i:
-                Js = Js.row_join(iJi[1])
-    print ''
+        Js = sympy.Matrix()
+        Js.rows = 6
+        iJ = [output.get() for proc in processes]
+        for i in xrange(dof):
+            for iJi in iJ:
+                if iJi[0] == i:
+                    Js = Js.row_join(iJi[1])
+        print ''
 
-    print ''
-    print 'Building pose C code...'
-    Plines, Pdef, Puse = exportCpp(T0[-1], args.T)
-    print ''
-    print '    // Generated pose code'
-    cCode(Pdef)
-    cCode(Plines)
-    print '    // End of pose code'
+        print ''
+        print 'Building pose C code...'
+        Plines, Pdef, Puse = exportCpp(T0[-1], args.T)
+        print ''
+        print '    // Generated pose code'
+        cCode(Pdef)
+        cCode(Plines)
+        print '    // End of pose code'
 
-    print ''
-    print 'Building Jacobian C code...'
-    Jlines, Jdef, Juse = exportCpp(Js, args.J)
-    print ''
-    print '    // Generated Jacobian code'
-    cCode(Jdef)
-    cCode(Jlines)
-    print '    // End of Jacobian code'
-    
+        print ''
+        print 'Building Jacobian C code...'
+        Jlines, Jdef, Juse = exportCpp(Js, args.J)
+        print ''
+        print '    // Generated Jacobian code'
+        cCode(Jdef)
+        cCode(Jlines)
+        print '    // End of Jacobian code'
+        
     
     fixed_M = ((wMe, 'wMe','end-effector'), (bM0,'bM0','base frame'))
     for M in fixed_M:

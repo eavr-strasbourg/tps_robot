@@ -36,7 +36,7 @@ def Rot(theta,u):
     return sympy.Matrix(R)
 
 def Rxyz(rpy):
-    return Rot(rpy[0],X)*Rot(rpy[1],Y)*Rot(rpy[2],Z)
+    return Rot(rpy[2],Z)*Rot(rpy[1],Y)*Rot(rpy[0],X)
 
 def Homogeneous(t, R):
     #try:
@@ -152,8 +152,10 @@ def load_urdf(filename, base_frame, ee_frame):
     u = []
     parent = base_frame
     bM0 = wMe = None
-    for k, joint in enumerate([all_joints[i] for i in joint_path]):
-        child = joint.find('child').get('link')
+    last_moving = 0
+    joints = [all_joints[i] for i in joint_path]
+    
+    for k, joint in enumerate(joints):
         
         # get this transform
         xyz = simp_xyz(joint.find('origin').get('xyz').split(' '))
@@ -163,11 +165,12 @@ def load_urdf(filename, base_frame, ee_frame):
         #print Mi
         
         if joint.get('type') != 'fixed':            
-            
-            if n == 0 and k != 1:
-                # there were some fixed joints, build a constant matrix bM0
-                bM0 = M*Mi
-                M = sympy.eye(4)
+            last_moving = k
+            if n == 0 and k != 0:
+                # there were some fixed joints before this one, build a constant matrix bM0
+                bM0 = M
+                M = Mi
+                print 'Constant matrix bM0 between', base_frame, 'and', joints[k-1].find('child').get('link')
             else:
                 M = M*Mi
             n += 1
@@ -186,7 +189,6 @@ def load_urdf(filename, base_frame, ee_frame):
             else:
                 T.append(M * Homogeneous(0*X, Rot(q, u[-1])))
             # reset M for next joint
-            parent = child
             M = sympy.eye(4)
         else:
             M = M*Mi
@@ -194,6 +196,7 @@ def load_urdf(filename, base_frame, ee_frame):
     if joint.get('type') == 'fixed':
         # we finished on some fixed links
         wMe = M       
+        print 'Constant matrix wMe between', joints[last_moving].find('child').get('link'), 'and', ee_frame
     return T, u, prism, bM0, wMe
 
 

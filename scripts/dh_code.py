@@ -270,7 +270,7 @@ def replaceFctQ(s, cDef, cUse):
                     if 'q' in v:
                         cUse[sf] += v[1:]
                         i = int(v[1:])
-                        sUse += 'q[%i]' % (i-1)                        
+                        sUse += '%s[%i]' % (args.q, i-1)                        
                     else:
                         cUse[sf] += pmDict[v]                
                         sUse += v
@@ -282,7 +282,7 @@ def replaceFctQ(s, cDef, cUse):
             
     # other occurences of qi
     for i in xrange(dof):
-        s = s.replace('q%i' % i, 'q[%i]' % (i-1))
+        s = s.replace('q%i' % (i+1), '%s[%i]' % (args.q, i))
     return s.replace('1.00000000000000', '1'), cDef, cUse
 
 def exportCpp(M, s='M'):

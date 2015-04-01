@@ -272,6 +272,8 @@ def replaceFctQ(s, cDef, cUse):
                             cUse[sf] = '%s%i%s%i' % (fct[0],i,pmDict[pm],j)                 # c1p2
                             cDef[sf] = 'const double %s = %s;' % (cUse[sf],sUse)          # const double c1p2 = cos(q[0]+q[1]);
                         s = s.replace(sf, cUse[sf])                                       # replace cos(q1 + q2)
+        # other occurences of qi
+        s = s.replace('q%i' % i, 'q[%i]' % (i-1))
     return s.replace('1.00000000000000', '1'), cDef, cUse
 
 def exportCpp(M, s='M'):

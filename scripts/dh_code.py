@@ -2,12 +2,12 @@
 
 
 '''
-C-code generation for Denavit-Hartenberg parameters
+C-code generation for Denavit-Hartenberg parameters and URDF files
 
 python dh_code.py file.yml (from yaml file)
 python dh_code.py file.urdf base effector (from URDF file)
 
-author: Olivier Kermorgant
+author: Olivier Kermorgant, ICube Laboratory 
 '''
 
 import yaml
@@ -35,16 +35,15 @@ def Rot(theta,u):
 
 def Rxyz(rpy):
     '''
-    X - Y - Z convention, so multiply the matrices in reversed order
+    Rotation matrix in X - Y - Z convention, so multiply the matrices in reversed order
     '''
     return Rot(rpy[2],Z)*Rot(rpy[1],Y)*Rot(rpy[0],X)
-    #return Rot(rpy[0],X)*Rot(rpy[1],Y)*Rot(rpy[2],Z)
 
 def Homogeneous(t, R):
-    #try:
+    '''
+    Homogeneous frame transformation matrix from translation t and rotation R
+    '''
     M = simp_matrix((R.row_join(t)).col_join(sympy.Matrix([[0,0,0,1]])))
-    #except:
-    #    M = (Rot(theta,u).row_join(t*u)).col_join(sympy.Matrix([[0,0,0,1]]))
     return M
 
 class Bunch(object):
@@ -52,6 +51,9 @@ class Bunch(object):
         self.__dict__.update(adict)
 
 def load_yaml(filename):
+    '''
+    Loads the given yaml file with DH parameters. Builds the corresponding data.
+    '''
     with open(filename) as f:
         d = f.read()
         print d
@@ -96,8 +98,14 @@ def load_yaml(filename):
     
     
 def load_urdf(filename, base_frame, ee_frame):
+    '''
+    Parse the URDF file to extract the geometrical parameters between given frames
+    '''
         
     def simp_rpy(rpy):
+        '''
+        Converts floating angle values to fractions of pi
+        '''
         rpy = [parse_expr(v) for v in rpy]
         for i in xrange(3):
             for k in range(-11,12):
@@ -111,6 +119,9 @@ def load_urdf(filename, base_frame, ee_frame):
         return rpy
     
     def simp_xyz(xyz):
+        '''
+        Convert distance values to exact ones
+        '''
         xyz = [parse_expr(v) for v in xyz]
         for i in xrange(3):
             for v in (-1,0,1):
@@ -204,16 +215,9 @@ def load_urdf(filename, base_frame, ee_frame):
 
 # human sorting
 def human_sort(l):
-        convert = lambda text: int(text) if text.isdigit() else text 
-        alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-        l.sort( key=alphanum_key )
-
-debug = False
-    
-
-def prtDebug(s1, s2=''):
-        if debug:
-                print s1, s2
+    convert = lambda text: int(text) if text.isdigit() else text 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    l.sort( key=alphanum_key )
 
 def simp_matrix(M):
     '''
@@ -240,19 +244,6 @@ def compute_Ji(joint_prism, u0, p0, i):
     return (i, Jv.col_join(Jw))    # register this column as column i
     #return Jv.col_join(Jw)
 
-def cCode(s):
-    '''
-    Prints C++ code
-    '''
-    print ''
-    if type(s) == list:
-        for line in s:
-            print '   ',line
-    else:
-        v = s.values()
-        human_sort(v)
-        for line in v:
-            print '   ',line
 
 def replaceFctQ(s, cDef, cUse):
     '''
@@ -261,50 +252,35 @@ def replaceFctQ(s, cDef, cUse):
     fctList = ('cos', 'sin')
     pmDict = {'+':'p', '-':'m'}
     defCount = len(cDef)
-    prtDebug('len', defCount)
     for i in xrange(1,dof+1):
         for fct in fctList:
             # look for simple calls ie cos(q1)
             sf = '%s(q%i)' % (fct, i)                                                       # cos(q1)
             if s.find(sf) > -1:
-                prtDebug('found', sf)
                 if sf not in cDef:
                     sUse = '%s(%s[%i])' % (fct, args.q, i-1)                                # cos(q[0])
                     cUse[sf] = '%s%i' % (fct[0],i)                                          # c1
                     cDef[sf] = 'const double %s = %s;' % (cUse[sf], sUse)                   # const double c1 = cos(q[0]);
-                    prtDebug('   newUse :', cUse[sf])
-                    prtDebug('   defined:', cDef[sf])
-                    prtDebug('   cUse: ', len(cUse))
-                    prtDebug('   cDef: ', len(cDef))
                 s = s.replace(sf, cUse[sf])                                                 # replace cos(q1)
             # look for double calls ie cos(q1 + q2) or sin(q1 - q2)
             for j in xrange(i+1, dof+1):
                 for pm in pmDict:
                     sf = '%s(q%i %s q%i)' % (fct, i, pm, j)                                 # cos(q1 + q2)
                     if s.find(sf) > -1:
-                        prtDebug('found', sf)
                         sUse = '%s(%s[%i]+%s[%i])' % (fct, args.q, i-1, args.q, j-1)        # cos(q[0]+q[1])
                         if sf not in cDef:
                             cUse[sf] = '%s%i%s%i' % (fct[0],i,pmDict[pm],j)                 # c1p2
-                            cDef[sf] = 'const double %s = %s;' % (cUse[sf],sUse)    # const double c1p2 = cos(q[0]+q[1]);
-                            prtDebug('   newUse :', cUse[sf])
-                            prtDebug('   defined:', cDef[sf])
-                            prtDebug('   cUse: ', len(cUse))
-                            prtDebug('   cDef: ', len(cDef))
-                        s = s.replace(sf, cUse[sf])                                                                             # replace cos(q1 + q2)
-        
-        # look for other occurences of q
-        sf = 'q%i' % i                                                                                                                                  # q1
-        if s.find(sf) > -1:
-                sUse = '%s[%i]' % (args.q, i-1)                                                                                                     # q[0]  
-                s = s.replace(sf, sUse)                                                                                                         # replace q1 (remaining prismatic joints, optim not really useful)
-    return s.replace('1.00000000000000','1'), cDef, cUse
+                            cDef[sf] = 'const double %s = %s;' % (cUse[sf],sUse)          # const double c1p2 = cos(q[0]+q[1]);
+                        s = s.replace(sf, cUse[sf])                                       # replace cos(q1 + q2)
+    return s.replace('1.00000000000000', '1'), cDef, cUse
 
-def exportCpp(M, s='M',cDef={},cUse={}):
+def exportCpp(M, s='M'):
         '''
         Writes the C++ code corresponding to a given matrix
         '''
-        out = []
+        cDef={}
+        cUse={}
+        M_lines = []
 
         # write each element
         sRows = ''
@@ -315,9 +291,17 @@ def exportCpp(M, s='M',cDef={},cUse={}):
                 for j in xrange(M.cols):
                         if M.cols > 1:
                                 sCols = '[' + str(j) + ']'
-                        ms, cDef, cUse = replaceFctQ(str(sympy.N(M[i,j])), cDef, cUse)
-                        out.append(s + sRows + sCols + ' = ' + ms + ';')
-        return out, cDef, cUse
+                        ms, cDef, cUse = replaceFctQ(str(sympy.N(M[i,j])), cDef, cUse)                        
+                        M_lines.append(s + sRows + sCols + ' = ' + ms + ';')
+                        
+        # print definitions
+        cDef = cDef.values()
+        human_sort(cDef)
+        for line in cDef:
+            print '   ',line
+        # print matrix content
+        for line in M_lines:
+            print '   ', line
 
 if __name__ == '__main__':
     
@@ -408,29 +392,23 @@ if __name__ == '__main__':
 
         print ''
         print 'Building pose C code...'
-        Plines, Pdef, Puse = exportCpp(T0[-1], args.T)
         print ''
-        print '    // Generated pose code'
-        cCode(Pdef)
-        cCode(Plines)
+        print '    // Generated pose code'        
+        exportCpp(T0[-1], args.T)
         print '    // End of pose code'
 
         print ''
         print 'Building Jacobian C code...'
         if args.all_J:
             for i,Js in enumerate(all_J):
-                Jlines, Jdef, Juse = exportCpp(Js, args.J + str(i+1))
                 print ''
                 print '    // Generated Jacobian code to link %i'% (i+1)
-                cCode(Jdef)
-                cCode(Jlines)
+                exportCpp(Js, args.J + str(i+1))
                 print '    // End of Jacobian code to link %i'% (i+1)
         else:
-            Jlines, Jdef, Juse = exportCpp(Js, args.J)
             print ''
             print '    // Generated Jacobian code'
-            cCode(Jdef)
-            cCode(Jlines)
+            exportCpp(Js, args.J)
             print '    // End of Jacobian code'        
     
     fixed_M = ((wMe, 'wMe','end-effector'), (bM0,'bM0','base frame'))
@@ -438,10 +416,9 @@ if __name__ == '__main__':
         if M[0] != None:
             print ''
             print 'Building %s code...' % M[1]
-            Mlines, Mdef, Muse = exportCpp(M[0], M[1])
             print ''
             print '    // Generated %s code' % M[2]
-            cCode(Mlines)
+            exportCpp(M[0], M[1])
             print '    // End of %s code' % M[2]
             
     

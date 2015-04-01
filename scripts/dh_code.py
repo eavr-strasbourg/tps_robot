@@ -17,16 +17,14 @@ import sympy
 from sympy.parsing.sympy_parser import parse_expr
 from pylab import pi, array, norm
 import re
-import multiprocessing as mp
+from multiprocessing import Pool
 import argparse
-
-
-
 
 # Utility functions and variables
 X = sympy.Matrix([1,0,0]).reshape(3,1)
 Y = sympy.Matrix([0,1,0]).reshape(3,1)
 Z = sympy.Matrix([0,0,1]).reshape(3,1)
+
 
 def sk(u):
     return sympy.Matrix([[0,-u[2],u[1]],[u[2],0,-u[0]],[-u[1],u[0],0]])
@@ -36,7 +34,11 @@ def Rot(theta,u):
     return sympy.Matrix(R)
 
 def Rxyz(rpy):
+    '''
+    X - Y - Z convention, so multiply the matrices in reversed order
+    '''
     return Rot(rpy[2],Z)*Rot(rpy[1],Y)*Rot(rpy[0],X)
+    #return Rot(rpy[0],X)*Rot(rpy[1],Y)*Rot(rpy[2],Z)
 
 def Homogeneous(t, R):
     #try:
@@ -86,7 +88,7 @@ def load_yaml(filename):
         for i in xrange(4):
             if type(joint[i]) == str:
                 joint[i] = parse_expr(joint[i])
-        # fixed matrix
+        # transformation matrix
         T.append(Homogeneous(joint[iA]*X, Rot(joint[iAlpha],X)) * Homogeneous(joint[iR]*Z, Rot(joint[iTheta],Z)))
         # joint axis, always Z in DH convention
         u.append(Z)
@@ -222,18 +224,20 @@ def simp_matrix(M):
             M[i,j] = sympy.simplify(M[i,j])
     return M    
 
-def compute_Ji(joint_prism, u, p, i, output):
+def compute_Ji(joint_prism, u0, p0, i):
     '''
     Compute the i-eth column of the Jacobian (used for multiprocessing)
     '''
     if joint_prism[i]:
-        Jv = simp_matrix(u[i])
+        # prismatic joint: v = qdot.u and w = 0
+        Jv = simp_matrix(u0[i])
         Jw = sympy.Matrix([[0,0,0]]).reshape(3,1)
     else:
-        Jv = simp_matrix(sk(u[i])*(p[dof-1]-p[i-1]))
-        Jw = simp_matrix(u[i])
+        # revolute joint: v = [qdot.u]x p and w = qdot.u
+        Jv = simp_matrix(sk(u0[i])*(p0[-1]-p0[i]))
+        Jw = simp_matrix(u0[i])
     print '   J_%i' % (i+1)
-    output.put((i, Jv.col_join(Jw)))
+    return (i, Jv.col_join(Jw))    # register this column as column i
     #return Jv.col_join(Jw)
 
 def cCode(s):
@@ -261,25 +265,25 @@ def replaceFctQ(s, cDef, cUse):
     for i in xrange(1,dof+1):
         for fct in fctList:
             # look for simple calls ie cos(q1)
-            sf = '%s(q%i)' % (fct, i)                                                                                                       # cos(q1)
+            sf = '%s(q%i)' % (fct, i)                                                       # cos(q1)
             if s.find(sf) > -1:
                 prtDebug('found', sf)
                 if sf not in cDef:
-                    sUse = '%s(%s[%i])' % (fct, args.q, i-1)                                                            # cos(q[0])
-                    cUse[sf] = '%s%i' % (fct[0],i)                                                                  # c1
+                    sUse = '%s(%s[%i])' % (fct, args.q, i-1)                                # cos(q[0])
+                    cUse[sf] = '%s%i' % (fct[0],i)                                          # c1
                     cDef[sf] = 'const double %s = %s;' % (cUse[sf], sUse)                   # const double c1 = cos(q[0]);
                     prtDebug('   newUse :', cUse[sf])
                     prtDebug('   defined:', cDef[sf])
                     prtDebug('   cUse: ', len(cUse))
                     prtDebug('   cDef: ', len(cDef))
-                s = s.replace(sf, cUse[sf])                                                                                             # replace cos(q1)
+                s = s.replace(sf, cUse[sf])                                                 # replace cos(q1)
             # look for double calls ie cos(q1 + q2) or sin(q1 - q2)
             for j in xrange(i+1, dof+1):
                 for pm in pmDict:
-                    sf = '%s(q%i %s q%i)' % (fct, i, pm, j)                                                         # cos(q1 + q2)
+                    sf = '%s(q%i %s q%i)' % (fct, i, pm, j)                                 # cos(q1 + q2)
                     if s.find(sf) > -1:
                         prtDebug('found', sf)
-                        sUse = '%s(%s[%i]+%s[%i])' % (fct, args.q, i-1, args.q, j-1)                    # cos(q[0]+q[1])
+                        sUse = '%s(%s[%i]+%s[%i])' % (fct, args.q, i-1, args.q, j-1)        # cos(q[0]+q[1])
                         if sf not in cDef:
                             cUse[sf] = '%s%i%s%i' % (fct[0],i,pmDict[pm],j)                 # c1p2
                             cDef[sf] = 'const double %s = %s;' % (cUse[sf],sUse)    # const double c1p2 = cos(q[0]+q[1]);
@@ -326,6 +330,7 @@ if __name__ == '__main__':
     parser.add_argument('-q', metavar='q', help='How the joint vector appears in the code',default='q')
     parser.add_argument('-T', metavar='T', help='How the pose matrix appears in the code',default='T')
     parser.add_argument('-J', metavar='J', help='How the Jacobian matrix appears in the code',default='J') 
+    parser.add_argument('--all_J', action='store_true', help='Computes the Jacobian of all frames',default=False)
     parser.add_argument('--only-fixed', action='store_true', help='Only computes the fixed matrices, before and after the arm',default=False)
     args = parser.parse_args()
 
@@ -365,31 +370,41 @@ if __name__ == '__main__':
             print '  T %i/0' % (i+1)
                 
         # Jacobian   
-        # Rotation part
+        # Rotation of each frame to go to frame 0
         print ''
         print 'Building differential kinematic model...'
-        R0 = [M[:3,:3] for M in T0]    
-        # origin part
-        p = [T0[i][:3,3] for i in xrange(dof)]
-        p.append(sympy.Matrix([[0],[0],[0]]))
-        u0 = [R0[i]*u[i] for i in xrange(dof)] # joint axis expressed in base frame
-        # build Jacobian
         
-        output = mp.Queue()
-        processes = [mp.Process(target=compute_Ji, args=(prism, u0, p, i, output)) for i in xrange(dof)]
-        for proc in processes:
-            proc.start()
-        for proc in processes:
-            proc.join()
+        R0 = [M[:3,:3] for M in T0]
+        # joint axis expressed in frame 0
+        u0 = [R0[i]*u[i] for i in xrange(dof)] 
+        
+        all_J = []
+        
+        if args.all_J:
+            ee_J = range(1,dof+1)
+        else:
+            ee_J = [dof]
+        for ee in ee_J:
+            # origin of each frame expressed in frame 0
+            p0 = [T0[i][:3,3] for i in xrange(ee)]
+                        
+            # build Jacobian
+            pool = Pool()
+            results = []
+            for i in xrange(ee):
+                # add this column to pool
+                results.append(pool.apply_async(compute_Ji, args=(prism, u0, p0, i)))
 
-        Js = sympy.Matrix()
-        Js.rows = 6
-        iJ = [output.get() for proc in processes]
-        for i in xrange(dof):
-            for iJi in iJ:
-                if iJi[0] == i:
-                    Js = Js.row_join(iJi[1])
+            Js = sympy.Matrix()
+            Js.rows = 6
+            iJ = [result.get() for result in results]
+            for i in xrange(ee):
+                for iJi in iJ:
+                    if iJi[0] == i:
+                        Js = Js.row_join(iJi[1])
+            all_J.append(Js)
         print ''
+        pool.terminate()
 
         print ''
         print 'Building pose C code...'
@@ -402,13 +417,21 @@ if __name__ == '__main__':
 
         print ''
         print 'Building Jacobian C code...'
-        Jlines, Jdef, Juse = exportCpp(Js, args.J)
-        print ''
-        print '    // Generated Jacobian code'
-        cCode(Jdef)
-        cCode(Jlines)
-        print '    // End of Jacobian code'
-        
+        if args.all_J:
+            for i,Js in enumerate(all_J):
+                Jlines, Jdef, Juse = exportCpp(Js, args.J + str(i+1))
+                print ''
+                print '    // Generated Jacobian code to link %i'% (i+1)
+                cCode(Jdef)
+                cCode(Jlines)
+                print '    // End of Jacobian code to link %i'% (i+1)
+        else:
+            Jlines, Jdef, Juse = exportCpp(Js, args.J)
+            print ''
+            print '    // Generated Jacobian code'
+            cCode(Jdef)
+            cCode(Jlines)
+            print '    // End of Jacobian code'        
     
     fixed_M = ((wMe, 'wMe','end-effector'), (bM0,'bM0','base frame'))
     for M in fixed_M:
@@ -420,3 +443,5 @@ if __name__ == '__main__':
             print '    // Generated %s code' % M[2]
             cCode(Mlines)
             print '    // End of %s code' % M[2]
+            
+    

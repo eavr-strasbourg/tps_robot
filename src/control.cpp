@@ -57,7 +57,7 @@ int main(int argc, char ** argv)
 
         break;
     default:
-
+        break;
     }
     const unsigned int pas = 100; // pas pour generation de trajectoire
     const double invPas = 1./pas;

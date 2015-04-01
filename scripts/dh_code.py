@@ -252,27 +252,36 @@ def replaceFctQ(s, cDef, cUse):
     fctList = ('cos', 'sin')
     pmDict = {'+':'p', '-':'m'}
     defCount = len(cDef)
-    for i in xrange(1,dof+1):
-        for fct in fctList:
-            # look for simple calls ie cos(q1)
-            sf = '%s(q%i)' % (fct, i)                                                       # cos(q1)
-            if s.find(sf) > -1:
-                if sf not in cDef:
-                    sUse = '%s(%s[%i])' % (fct, args.q, i-1)                                # cos(q[0])
-                    cUse[sf] = '%s%i' % (fct[0],i)                                          # c1
-                    cDef[sf] = 'const double %s = %s;' % (cUse[sf], sUse)                   # const double c1 = cos(q[0]);
-                s = s.replace(sf, cUse[sf])                                                 # replace cos(q1)
-            # look for double calls ie cos(q1 + q2) or sin(q1 - q2)
-            for j in xrange(i+1, dof+1):
-                for pm in pmDict:
-                    sf = '%s(q%i %s q%i)' % (fct, i, pm, j)                                 # cos(q1 + q2)
-                    if s.find(sf) > -1:
-                        sUse = '%s(%s[%i]+%s[%i])' % (fct, args.q, i-1, args.q, j-1)        # cos(q[0]+q[1])
-                        if sf not in cDef:
-                            cUse[sf] = '%s%i%s%i' % (fct[0],i,pmDict[pm],j)                 # c1p2
-                            cDef[sf] = 'const double %s = %s;' % (cUse[sf],sUse)          # const double c1p2 = cos(q[0]+q[1]);
-                        s = s.replace(sf, cUse[sf])                                       # replace cos(q1 + q2)
-        # other occurences of qi
+    # replace with all expressions already found
+    for sf in cUse:
+        s = s.replace(sf, cUse[sf])
+        
+    # look for new expressions
+    for fct in fctList:
+        while True:
+            pos = s.find(fct)
+            if pos != -1:
+                end = pos + s[pos:].find(')')                   
+                sf = s[pos:end+1]                                       # sf = cos(q1 + q2 - q3)
+                expr = s[pos+len(fct)+1:end].split(' ')                 # expr = [q1,+,q2,-,q3]
+                cUse[sf] = fct[0]                
+                sUse = fct + '('
+                for v in expr:
+                    if 'q' in v:
+                        cUse[sf] += v[1:]
+                        i = int(v[1:])
+                        sUse += 'q[%i]' % (i-1)                        
+                    else:
+                        cUse[sf] += pmDict[v]                
+                        sUse += v
+                sUse += ')'                                             # cos(q[0]+q[1]-q[2])
+                cDef[sf] = 'const double %s = %s;' % (cUse[sf], sUse)   # const c1p2m3 = cos(q[0]+q[1]-q[2]);
+                s = s.replace(sf, cUse[sf])
+            else:
+                break
+            
+    # other occurences of qi
+    for i in xrange(dof):
         s = s.replace('q%i' % i, 'q[%i]' % (i-1))
     return s.replace('1.00000000000000', '1'), cDef, cUse
 
@@ -421,5 +430,4 @@ if __name__ == '__main__':
             print ''
             print '    // Generated %s code' % M[2]
             exportCpp(M[0], M[1])
-            print '    // End of %s code' % M[2]    
-    
+            print '    // End of %s code' % M[2]

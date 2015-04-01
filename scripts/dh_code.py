@@ -390,7 +390,7 @@ if __name__ == '__main__':
                         Js = Js.row_join(iJi[1])
             all_J.append(Js)
         print ''
-        pool.terminate()
+        pool.close()
 
         print ''
         print 'Building pose C code...'
@@ -421,6 +421,5 @@ if __name__ == '__main__':
             print ''
             print '    // Generated %s code' % M[2]
             exportCpp(M[0], M[1])
-            print '    // End of %s code' % M[2]
-            
+            print '    // End of %s code' % M[2]    
     

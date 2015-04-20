@@ -42,7 +42,7 @@ int
 main(int argc, char ** argv)
 {
     // ROS stuff
-    ros::init(argc, argv, "main_control");
+    ros::init(argc, argv, "simulator");
     ros::start();
     ros::NodeHandle rosNH;
     const int rosRate = 100;

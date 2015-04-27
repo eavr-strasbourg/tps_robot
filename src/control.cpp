@@ -21,15 +21,24 @@ int main(int argc, char ** argv)
 
     // Tache a realiser, defaut 0 (affiche seulement)
     int question = 0;
-    rosNH.param("/Q", question, 0);
+    if(rosNH.hasParam("/Q"))
+        rosNH.getParam("/Q", question);
+    else
+        rosNH.setParam("/Q", question);
 
     // Temps au bout duquel changer de consigne, defaut 10 s
-    double Ts;
-    rosNH.param("/Ts", Ts, 10.);
+    double Ts = 10;
+    if(rosNH.hasParam("/Ts"))
+        rosNH.getParam("/Ts", Ts);
+    else
+        rosNH.setParam("/Ts", Ts);
 
     // Gain du controle en vitesse, defaut 1
-    double lambda;
-    rosNH.param("/lambda", lambda, 1.);
+    double lambda = 1;
+    if(rosNH.hasParam("/lambda"))
+        rosNH.getParam("/lambda", lambda);
+    else
+        rosNH.setParam("/lambda", lambda);
 
     // *** exemple d'un publisher supplementaire : erreur de position
     // declaration du publisher

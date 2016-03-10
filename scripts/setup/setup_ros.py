@@ -53,7 +53,7 @@ copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, '.')
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"
-with open('.bashrc', 'r+') as f:
+with open(USER_HOME+'/.bashrc', 'r+') as f:
     data = f.read().splitlines()
     # Effacement configuration precedente
     try:

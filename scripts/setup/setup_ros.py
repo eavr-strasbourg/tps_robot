@@ -41,7 +41,7 @@ if len(sys.argv) == 1:
 # user part of the installation
 print "[Creation du repertoire utilisateur]"
 user_call('rosdep update')
-user_call('bash -c source /opt/ros/%s/setup.sh' % ROSVERSION)
+call([]'bash',  '-c', 'source /opt/ros/%s/setup.sh' % ROSVERSION)
 os.chdir(USER_HOME)
 os.mkdir('ros')
 os.chdir('ros')

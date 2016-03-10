@@ -33,7 +33,7 @@ if rospy.has_param('/Ts') == False:
 	rospy.set_param('/Ts', Ts)
 
 # Publisher for setpoint
-setpointPub = rospy.Publisher('/setpoint', Float32MultiArray)
+setpointPub = rospy.Publisher('/setpoint', Float32MultiArray, queue_size=10)
 setpointMsg = Float32MultiArray()
 setpointMsg.data = [0,0]
 

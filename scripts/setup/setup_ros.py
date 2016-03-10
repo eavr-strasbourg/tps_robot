@@ -43,9 +43,11 @@ print "[Creation du repertoire utilisateur]"
 user_call('rosdep update')
 call(['bash',  '-c', 'source /opt/ros/%s/setup.sh' % ROSVERSION])
 os.chdir(USER_HOME)
-os.mkdir('ros')
+if not os.path.exists('ros'):
+    os.mkdir('ros')
 os.chdir('ros')
-os.mkdir('src')
+if not os.path.exists('src'):
+    os.mkdir('src')
 os.chdir('src')
 copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, '.')
 

@@ -35,4 +35,4 @@ mkdir -p ~/ros/src
 cd ~/ros/src
 catkin_init_workspace
 cd ~/ros/
-catkin_make
+cp /opt/ros/$2/share/catkin/cmake.toplevel.cmake .

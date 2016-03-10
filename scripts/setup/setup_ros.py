@@ -17,6 +17,10 @@ if getuser() == 'root':
 	sys.exit(0)
 	
 USER_HOME = '/home/'+getuser()
+USER_ROS = USER_HOME + '/ros''
+USER_SRC = USER_HOME + '/ros/src
+USER_BUILD = USER_HOME + '/ros/build
+
 
 UBUNTU_VERSION = linux_distribution()[2]
 DEBUT_CONFIG = '# --- Configuration ROS ---'
@@ -42,14 +46,10 @@ if len(sys.argv) == 1:
 print "[Creation du repertoire utilisateur]"
 user_call('rosdep update')
 call(['bash',  '-c', 'source /opt/ros/%s/setup.sh' % ROSVERSION])
-os.chdir(USER_HOME)
-if not os.path.exists('ros'):
-    os.mkdir('ros')
-os.chdir('ros')
-if not os.path.exists('src'):
-    os.mkdir('src')
-os.chdir('src')
-copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, 'CMakeLists.txt')
+for d in [USER_ROS, USER_SRC, USER_BUILD]:
+    if not os.path.exists(d):
+        os.mkdir(d)
+copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, USER_SRC + '/CMakeLists.txt')
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"
@@ -78,10 +78,11 @@ with open(USER_HOME+'/.bashrc', 'r+') as f:
 call(['bash','-c', 'source ~/.bashrc'])
 
 print '[Telechargement sujet de TP robotique]'
-os.chdir(USER_HOME+'/ros/src')
+os.chdir(USER_SRC)
 user_call('git clone https://github.com/eavr-strasbourg/tps_robot.git')
-os.chdir('..')
-user_call('catkin_make')
+os.chdir(USER_BUILD)
+user_call('cmake ../src')
+user_call(make)
 
 print '' 
 print "[Pret pour utilisation !!]"

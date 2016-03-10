@@ -22,7 +22,7 @@ sudo apt-get update -qq
 sudo apt-get upgrade -qq
 
 echo "[Installing ROS]"
-sudo apt-get install -y ros-$2-desktop ros-$2-rqt-* ros-$2-vision-visp qtcreator python-rosdep gitk python-sympy
+sudo apt-get install -y ros-$2-desktop ros-$2-vision-visp qtcreator python-rosdep gitk python-sympy
 
 echo "[rosdep init and python-rosinstall]"
 sudo sh -c "rosdep init"

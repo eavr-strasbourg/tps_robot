@@ -39,7 +39,7 @@ if len(sys.argv) == 1:
     user_call('sh install_ros.sh %s %s' % (UBUNTU_VERSION, ROSVERSION))
     
 # user part of the installation
-print "[Making the catkin workspace and testing the catkin_make]"
+print "[Creation du repertoire utilisateur]"
 user_call('rosdep update')
 user_call('bash -c source /opt/ros/%s/setup.sh' % ROSVERSION)
 os.chdir(USER_HOME)
@@ -47,7 +47,7 @@ os.mkdir('ros')
 os.chdir('ros')
 os.mkdir('src')
 os.chdir('src')
-copy('/opt/ros/%s/share/catkin/cmake.toplevel.cmake' % ROSVERSION, '.')
+copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, '.')
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"

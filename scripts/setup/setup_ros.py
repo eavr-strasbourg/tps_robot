@@ -49,7 +49,7 @@ os.chdir('ros')
 if not os.path.exists('src'):
     os.mkdir('src')
 os.chdir('src')
-copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, '.')
+copy('/opt/ros/%s/share/catkin/cmake/toplevel.cmake' % ROSVERSION, 'CMakeLists.txt')
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"

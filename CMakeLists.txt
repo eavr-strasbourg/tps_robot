@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 find_package(VISP REQUIRED)
-find_library(VISP_LIBRARY NAMES visp HINTS ${VISP_LIBRARY_DIRS} ) 
 
 find_package(OpenCV REQUIRED)
 
@@ -43,7 +42,7 @@ include
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME} src/tps_robot.cpp include/tps_robot/tps_robot.h)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${VISP_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 
 add_executable(simu_4points src/simu_4points.cpp)
 target_link_libraries(simu_4points ${PROJECT_NAME}  ${OpenCV_LIBS})

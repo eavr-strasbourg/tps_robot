@@ -35,7 +35,8 @@ def user_call(cmd_line):
     call(cmd_line.split(' '))
     
 # Installation
-user_call('sh install_ros.sh %s %s' % (UBUNTU_VERSION, ROSVERSION))
+if len(sys.argv) == 1:
+    user_call('sh install_ros.sh %s %s' % (UBUNTU_VERSION, ROSVERSION))
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"

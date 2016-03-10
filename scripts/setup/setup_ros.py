@@ -17,9 +17,9 @@ if getuser() == 'root':
 	sys.exit(0)
 	
 USER_HOME = '/home/'+getuser()
-USER_ROS = USER_HOME + '/ros''
-USER_SRC = USER_HOME + '/ros/src
-USER_BUILD = USER_HOME + '/ros/build
+USER_ROS = USER_HOME + '/ros'
+USER_SRC = USER_HOME + '/ros/src'
+USER_BUILD = USER_HOME + '/ros/build'
 
 
 UBUNTU_VERSION = linux_distribution()[2]

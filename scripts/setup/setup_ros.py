@@ -5,12 +5,12 @@ Created on: 11 Oct 2013
 Author: Olivier Kermorgant
 
 Installe ROS et met en place les repertoires pour le TP 
-A lancer avec sudo afin d'installer les packages via apt-get
 '''
 import os, sys
 from platform import linux_distribution
 from subprocess import call
 from getpass import getuser
+from shutil import copy
 
 if getuser() == 'root':
 	print 'Ce script est a lancer en mode utilisateur'
@@ -34,13 +34,23 @@ def user_call(cmd_line):
     print 'calling:', cmd_line
     call(cmd_line.split(' '))
     
-# Installation
+# sudoer part of the installation
 if len(sys.argv) == 1:
     user_call('sh install_ros.sh %s %s' % (UBUNTU_VERSION, ROSVERSION))
+    
+# user part of the installation
+print "[Making the catkin workspace and testing the catkin_make]"
+user_call('rosdep update')
+user_call('bash -c source /opt/ros/%s/setup.sh' % ROSVERSION)
+os.chdir(USER_HOME)
+os.mkdir('ros')
+os.chdir('ros')
+os.mkdir('src')
+os.chdir('src')
+copy('/opt/ros/%s/share/catkin/cmake.toplevel.cmake' % ROSVERSION, '.')
 
 # Environnement et dossiers utilisateur
 print "[Configuration de l'environnement]"
-os.chdir(USER_HOME)
 with open('.bashrc', 'r+') as f:
     data = f.read().splitlines()
     # Effacement configuration precedente
@@ -68,7 +78,8 @@ call(['bash','-c', 'source ~/.bashrc'])
 print '[Telechargement sujet de TP robotique]'
 os.chdir(USER_HOME+'/ros/src')
 user_call('git clone https://github.com/eavr-strasbourg/tps_robot.git')
-
+os.chdir('..')
+user_call('catkin_make')
 
 print '' 
 print "[Pret pour utilisation !!]"

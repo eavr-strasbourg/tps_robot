@@ -81,7 +81,7 @@ print '[Telechargement sujet de TP robotique]'
 os.chdir(USER_SRC)
 user_call('git clone https://github.com/eavr-strasbourg/tps_robot.git')
 os.chdir(USER_BUILD)
-user_call('cmake ../src')
+user_call('cmake ../src -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel')
 user_call(make)
 
 print '' 

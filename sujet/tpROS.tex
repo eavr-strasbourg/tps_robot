@@ -224,11 +224,11 @@ Chaque node pouvant être codé, exécuté et compilé indépendamment, cela per
 \subsection{ROS dans le code}
 \begin{enumerate}
 \item On a pu voir que ROS disposait de nombreux outils en ligne de commande\footnote{ Ces outils sont résumés en Annexe \ref{sec:lignecomm}}.
-Pour pouvoir exploiter ces avantages dans le logiciel Qt Creator, il faut également le lancer depuis une console : \texttt{qtcreator}.
+Pour pouvoir exploiter ces avantages dans le logiciel Qt Creator, il faut également le lancer depuis une console : \texttt{qtcreator}\footnote{Les plus aventureux pourront se créer une icône de raccourci exécutant \texttt{bash -i -c qtcreator}}.
 Lors des prochaines séances il faudra également lancer Qt Creator via la console\footnote{ Attention notamment à l'ouverture automatique des \texttt{.cpp} dans Qt Creator : le logiciel ainsi lancé ne sera pas interfacé avec l'environnement ROS.}.
 Pour ouvrir le package tps\_robot :
 \begin{itemize}
-\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du répertoire \texttt{\ros}
+\item Avec \texttt{File/Open file}, choisir le fichier \texttt{CMakeList.txt} du répertoire \texttt{\ros/src}
  \item Indiquer \texttt{\ros/build} comme répertoire de compilation
  \item Valider et exécuter CMake pour obtenir l'affichage des fichiers source
  \item Avec \texttt{File/Open file}, ouvrir également le fichier \texttt{script/setpoint\_4points.py}

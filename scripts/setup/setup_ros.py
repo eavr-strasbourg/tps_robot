@@ -29,6 +29,8 @@ FIN_CONFIG = '# --- Fin configuration ROS ---'
 ROSVERSION = 'indigo'
 if UBUNTU_VERSION == 'precise':
     ROSVERSION = 'hydro'
+elif UBUNTU_VERSION == 'xenial':
+    ROSVERSION = 'kinetic'
 
     
 def user_call(cmd_line):

@@ -19,6 +19,7 @@ from pylab import pi, array, norm
 import re
 from multiprocessing import Pool
 import argparse
+from commands import getoutput
 
 # Utility functions and variables
 X = sympy.Matrix([1,0,0]).reshape(3,1)
@@ -50,16 +51,14 @@ class Bunch(object):
     def __init__(self, adict):
         self.__dict__.update(adict)
 
-def load_yaml(filename):
+def load_yaml(filecontent):
     '''
-    Loads the given yaml file with DH parameters. Builds the corresponding data.
+    Loads the given yaml file content with DH parameters. Builds the corresponding data.
     '''
-    with open(filename) as f:
-        d = f.read()
-        print d
-        robot = yaml.load(d)
-        robot['keys'] = [k for k in robot]
-        robot = Bunch(robot)
+    robot = yaml.load(filecontent)
+    robot['keys'] = [k for k in robot]
+    robot = Bunch(robot)  
+
     # get ordering
     if 'notation' in robot.keys:
             iAlpha = robot.notation.index('alpha')
@@ -95,42 +94,49 @@ def load_yaml(filename):
         # joint axis, always Z in DH convention
         u.append(Z)
     return T, u, prism
-    
-    
-def load_urdf(filename, base_frame, ee_frame):
+
+
+def simp_rpy(rpy):
+    '''
+    Converts floating angle values to fractions of pi
+    '''
+    rpy = [parse_expr(v) for v in rpy]
+    for i in xrange(3):
+        for k in range(-12,13):
+            if abs(rpy[i] - k*pi/12.) < 1e-5:
+                if k != 0:
+                    print '  changing', rpy[i], 'to', sympy.simplify(k*sympy.pi/12)
+                rpy[i] = str(sympy.simplify(k*sympy.pi/12))
+                if rpy[i] == '0':
+                    rpy[i] = 0
+                break
+    return rpy
+
+
+def simp_val(val):
+    '''
+    Convert distance values to exact ones
+    '''
+    val = [parse_expr(v) for v in val]
+    for i in xrange(len(val)):
+        for v in (-1,0,1):
+            if abs(val[i]-v) < 1e-5:
+                val[i] = v
+    return sympy.Matrix(val).reshape(len(val),1)
+
+def load_urdf(filename):
+    # reads as URDF or XACRO depending on file name
+    if filename.split('.')[-1] == 'urdf':
+        with open(filename) as f:
+            return f.read()
+    else:
+        return getoutput('rosrun xacro xacro --inorder ' + filename)
+        
+def parse_urdf(filename, base_frame, ee_frame, use_joint_names = False):
     '''
     Parse the URDF file to extract the geometrical parameters between given frames
     '''
-        
-    def simp_rpy(rpy):
-        '''
-        Converts floating angle values to fractions of pi
-        '''
-        rpy = [parse_expr(v) for v in rpy]
-        for i in xrange(3):
-            for k in range(-11,12):
-                if abs(rpy[i] - k*pi/12.) < 1e-5:
-                    if k != 0:
-                        print '  changing', rpy[i], 'to', sympy.simplify(k*sympy.pi/12)
-                    rpy[i] = str(sympy.simplify(k*sympy.pi/12))
-                    if rpy[i] == '0':
-                        rpy[i] = 0
-                    break
-        return rpy
-    
-    def simp_xyz(xyz):
-        '''
-        Convert distance values to exact ones
-        '''
-        xyz = [parse_expr(v) for v in xyz]
-        for i in xrange(3):
-            for v in (-1,0,1):
-                if abs(xyz[i]-v) < 1e-5:
-                    xyz[i] = v
-        return sympy.Matrix(xyz).reshape(3,1)
-    
-    with open(filename) as f:
-        robot = etree.fromstring(f.read())
+    robot = etree.parse(filename)
         
     # find all joints
     parents = []
@@ -163,6 +169,7 @@ def load_urdf(filename, base_frame, ee_frame):
     T = []
     prism = []
     u = []
+    all_q = []
     parent = base_frame
     bM0 = wMe = None
     last_moving = 0
@@ -171,7 +178,7 @@ def load_urdf(filename, base_frame, ee_frame):
     for k, joint in enumerate(joints):
         
         # get this transform
-        xyz = simp_xyz(joint.find('origin').get('xyz').split(' '))
+        xyz = simp_val(joint.find('origin').get('xyz').split(' '))
         rpy = simp_rpy(joint.find('origin').get('rpy').split(' '))
         Mi = Homogeneous(xyz, Rxyz(rpy))
         #print 'from', joint.find('parent').get('link'), 'to', child
@@ -194,9 +201,13 @@ def load_urdf(filename, base_frame, ee_frame):
             # axis
             ax = array([float(v) for v in joint.find('axis').get('xyz').split(' ')])
             ax = ax/norm(ax)
-            u.append(simp_xyz([str(v) for v in ax]))
+            u.append(simp_val([str(v) for v in ax]))
             # Transform matrix
-            q = sympy.Symbol('q%i'%n)
+            if use_joint_names:
+                q = sympy.Symbol(joint.get('name'))
+            else:
+                q = sympy.Symbol('q%i'%n)
+            all_q.append(q)
             if prism[-1]:
                 T.append(M * Homogeneous(q*u[-1], Rot(0, X)))
             else:
@@ -210,7 +221,7 @@ def load_urdf(filename, base_frame, ee_frame):
         # we finished on some fixed links
         wMe = M       
         print 'Constant matrix wMe between', joints[last_moving].find('child').get('link'), 'and', ee_frame
-    return T, u, prism, bM0, wMe
+    return T, u, prism, bM0, wMe, all_q
 
 
 # human sorting
@@ -245,7 +256,7 @@ def compute_Ji(joint_prism, u0, p0, i):
     #return Jv.col_join(Jw)
 
 
-def replaceFctQ(s, cDef, cUse):
+def replaceFctQ(s, cDef, cUse, q = 'q_'):
     '''
     Replace cos and sin functions of q_i with precomputed constants
     '''
@@ -270,7 +281,7 @@ def replaceFctQ(s, cDef, cUse):
                     if 'q' in v:
                         cUse[sf] += v[1:]
                         i = int(v[1:])
-                        sUse += '%s[%i]' % (args.q, i-1)                        
+                        sUse += '%s[%i]' % (q, i-1)                        
                     else:
                         cUse[sf] += pmDict[v]                
                         sUse += v
@@ -281,11 +292,11 @@ def replaceFctQ(s, cDef, cUse):
                 break
             
     # other occurences of qi
-    for i in xrange(dof):
-        s = s.replace('q%i' % (i+1), '%s[%i]' % (args.q, i))
-    return s.replace('1.00000000000000', '1'), cDef, cUse
+    for i in xrange(100):
+        s = s.replace('q%i' % (i+1), '%s[%i]' % (q, i))
+    return s.replace('00000000000000', '').replace('0000000000000', ''), cDef, cUse
 
-def exportCpp(M, s='M'):
+def exportCpp(M, s='M', q = 'q_', col_offset = 0):
         '''
         Writes the C++ code corresponding to a given matrix
         '''
@@ -301,9 +312,12 @@ def exportCpp(M, s='M'):
                         sRows = '[' + str(i) + ']'
                 for j in xrange(M.cols):
                         if M.cols > 1:
-                                sCols = '[' + str(j) + ']'
-                        ms, cDef, cUse = replaceFctQ(str(sympy.N(M[i,j])), cDef, cUse)                        
-                        M_lines.append(s + sRows + sCols + ' = ' + ms + ';')
+                                sCols = '[' + str(j+col_offset) + ']'
+                        if M[i,j] == 0: # comment this out
+                            M_lines.append('//' + s + sRows + sCols + ' = 0;')
+                        else:
+                            ms, cDef, cUse = replaceFctQ(str(sympy.N(M[i,j])), cDef, cUse, q)                        
+                            M_lines.append(s + sRows + sCols + ' = ' + ms + ';')
                         
         # print definitions
         cDef = cDef.values()
@@ -313,6 +327,61 @@ def exportCpp(M, s='M'):
         # print matrix content
         for line in M_lines:
             print '   ', line
+            
+def ComputeDK_J(T, u, prism, comp_all = False):
+     # get number of joints
+    dof = len(T)
+    
+    # Transform matrices
+    print ''
+    print 'Building direct kinematic model...'    
+    T0 = []     # absolute T(0,i)
+    for i in xrange(dof):
+        if len(T0) == 0:
+            T0.append(T[i])
+        else:
+            T0.append(simp_matrix(T0[-1]*T[i]))
+        print '  T %i/0' % (i+1)
+        
+    # Jacobian   
+    # Rotation of each frame to go to frame 0
+    print ''
+    print 'Building differential kinematic model...'
+    
+    R0 = [M[:3,:3] for M in T0]
+    # joint axis expressed in frame 0
+    u0 = [R0[i]*u[i] for i in xrange(dof)] 
+    
+    all_J = []
+    
+    if comp_all:
+        ee_J = range(1,dof+1)
+    else:
+        ee_J = [dof]
+    for ee in ee_J:
+        # origin of each frame expressed in frame 0
+        p0 = [T0[i][:3,3] for i in xrange(ee)]
+                    
+        # build Jacobian
+        pool = Pool()
+        results = []
+        for i in xrange(ee):
+            # add this column to pool
+            results.append(pool.apply_async(compute_Ji, args=(prism, u0, p0, i)))
+
+        Js = sympy.Matrix()
+        Js.rows = 6
+        iJ = [result.get() for result in results]
+        for i in xrange(ee):
+            for iJi in iJ:
+                if iJi[0] == i:
+                    Js = Js.row_join(iJi[1])
+        all_J.append(Js)
+    print ''
+    pool.close()    
+    return T0, all_J
+        
+    
 
 if __name__ == '__main__':
     
@@ -338,9 +407,9 @@ if __name__ == '__main__':
     # load into symbolic
     print ''
     print 'Building intermediary matrices...'
-    if args.files[0][-4:] == 'urdf':
+    if args.files[0].split('.')[-1] in ('urdf','xacro'):
         if len(args.files) == 3:
-            T, u, prism, bM0, wMe = load_urdf(args.files[0], args.files[1], args.files[2])
+            T, u, prism, bM0, wMe, all_q = parse_urdf(args.files[0], args.files[1], args.files[2])
         else:
             print 'Not enough arguments for URDF parsing - frames needed'
             sys.exit(0)
@@ -352,54 +421,10 @@ if __name__ == '__main__':
     # get number of joints
     dof = len(T)
     
-    # Transform matrices
     if not args.only_fixed:
-        print ''
-        print 'Building direct kinematic model...'    
-        T0 = []     # absolute T(0,i)
-        for i in xrange(dof):
-            if len(T0) == 0:
-                T0.append(T[i])
-            else:
-                T0.append(simp_matrix(T0[-1]*T[i]))
-            print '  T %i/0' % (i+1)
-                
-        # Jacobian   
-        # Rotation of each frame to go to frame 0
-        print ''
-        print 'Building differential kinematic model...'
         
-        R0 = [M[:3,:3] for M in T0]
-        # joint axis expressed in frame 0
-        u0 = [R0[i]*u[i] for i in xrange(dof)] 
-        
-        all_J = []
-        
-        if args.all_J:
-            ee_J = range(1,dof+1)
-        else:
-            ee_J = [dof]
-        for ee in ee_J:
-            # origin of each frame expressed in frame 0
-            p0 = [T0[i][:3,3] for i in xrange(ee)]
-                        
-            # build Jacobian
-            pool = Pool()
-            results = []
-            for i in xrange(ee):
-                # add this column to pool
-                results.append(pool.apply_async(compute_Ji, args=(prism, u0, p0, i)))
-
-            Js = sympy.Matrix()
-            Js.rows = 6
-            iJ = [result.get() for result in results]
-            for i in xrange(ee):
-                for iJi in iJ:
-                    if iJi[0] == i:
-                        Js = Js.row_join(iJi[1])
-            all_J.append(Js)
-        print ''
-        pool.close()
+        # Do the computation
+        T0, all_J = ComputeDK_J(T, u, prism, args.all_J)
 
         print ''
         print 'Building pose C code...'
@@ -414,12 +439,12 @@ if __name__ == '__main__':
             for i,Js in enumerate(all_J):
                 print ''
                 print '    // Generated Jacobian code to link %i'% (i+1)
-                exportCpp(Js, args.J + str(i+1))
+                exportCpp(Js, args.J + str(i+1), args.q)
                 print '    // End of Jacobian code to link %i'% (i+1)
         else:
             print ''
             print '    // Generated Jacobian code'
-            exportCpp(Js, args.J)
+            exportCpp(all_J[-1], args.J, args.q)
             print '    // End of Jacobian code'        
     
     fixed_M = ((wMe, 'wMe','end-effector'), (bM0,'bM0','base frame'))

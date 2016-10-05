@@ -23,7 +23,6 @@ from pylab import arange, sign
 # system
 import sys,os
 
-roslib.load_manifest('tps_robot')
 
 verbose = True
 

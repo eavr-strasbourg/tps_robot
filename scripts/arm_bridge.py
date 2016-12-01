@@ -27,10 +27,10 @@ import sys,os
 verbose = True
 
 # low-level sampling time
-T = 1./500
+T = 1./200
 
 # joint data: read URDF to get joint names and limits (position + velocity)
-urdf = rospy.get_param("robot_description").splitlines()
+urdf = rospy.get_param("/robot_description").splitlines()
 N = 0
 jointNames = []
 jointMin = []
@@ -70,26 +70,12 @@ def inJointLimits(q):
     '''
     return [min(max(q[i],jointMin[i]),jointMax[i]) for i in xrange(N)]
     
+    
 class State:
 	def __init__(self):
-	      self.msgPrint = ''
 	      self.qSet = [0.]*N
 	      self.cmdCount = 0
-	      
-	def printThread(self):
-		'''
-		Separate thread that prints stuff
-		'''
-		msg = ''
-		while not rospy.is_shutdown():
-			if self.msgPrint != msg:
-				msg = self.msgPrint
-				if type(msg) == str:	# if msg is a string, print it
-					print msg
-				else:			# otherwise msg should be a list of values
-					print ''.join([str(m) for m in msg])
-			time.sleep(T)
-			
+	      self.t0 = rospy.Time.now().to_sec()
 
 	def followPosition(self, qDes, cmdCountCur):
 		'''
@@ -142,66 +128,70 @@ class State:
 		'''
 		Execute command received on /robot/command topic
 		'''
+		if self.cmdCount == 0:
+                    print 'Switching to control mode'
+		
+		
 		self.cmdCount += 1
 		
+		self.t0 = rospy.Time.now().to_sec()
+		
 		if sum([vi*vi for vi in data.velocity]) == 0:
-			if len(data.position) != N:
-				self.msgPrint = 'Bad dimension: received %i positions for %i joints' %(len(data.position), N)
-			else:
-				# read positions
-				self.msgPrint = 'Following position #', self.cmdCount
+			if len(data.position) == N:
+                                # read positions
 				thread=threading.Thread(group=None,target=self.followPosition, name=None, args=(inJointLimits(data.position), self.cmdCount), kwargs={})
 				thread.start()
 		else:
-			if len(data.velocity) != N:
-				self.msgPrint = 'Bad dimension: received %i velocities for %i joints' %(len(data.velocity), N)
-			else:
+			if len(data.velocity) == N:
 				# read velocities
-				self.msgPrint = 'Following velocity #', self.cmdCount
 				thread=threading.Thread(group=None,target=self.followVelocity, name=None, args=([v*T for v in data.velocity], self.cmdCount), kwargs={})
 				thread.start()
+        
+        
+        def readManualCommand(self, data):
+            # erase autom setpoint only if not received for some time (2 s)
+            
+            
+            if rospy.Time.now().to_sec() - self.t0 > 2:        
+                if self.cmdCount != 0:
+                    print 'Switching to manual mode'
+                
+                self.qSet = data.position
+                self.cmdCount = 0
+            
 			
 if __name__ == '__main__':
 	'''
 	Begin of main code
 	'''
-	state = State()
 	
 	# name of the node
         rospy.init_node('joint_control')
-	
+        
+	state = State()
+
 	# subscribe to position and velocity command from main code
         rospy.Subscriber('/main_control/command', JointState, state.readBridgeCommand)
-				
+        
+        # subscribe to manual position setpoints
+        rospy.Subscriber('manual', JointState, state.readManualCommand)
+                
         # publish position command depending on the simulator type
-        cmdPub = rospy.Publisher('/joint_control/position', JointState)
+        cmdPub = rospy.Publisher('/joint_states', JointState, queue_size = 1)
+        
 	# create JointState object - used in rviz / ViSP
 	jointState = JointState()
 	jointState.position = [0.]*N
 	jointState.name = jointNames
 
 	print 'Waiting commands'
-	
-	thread=threading.Thread(group=None,target=state.printThread, name=None, args=(), kwargs={})
-	thread.start()
-        silentCount = 0
-        oldCount = 0
-        t0Plat = time.time()
+
         while not rospy.is_shutdown():
-                if state.cmdCount > 0 and silentCount < 10:
-                        # publish current position command to the simulator
-                        jointState.position = state.qSet
-                        cmdPub.publish(jointState)
-                        if state.cmdCount != oldCount:
-                                oldCount = state.cmdCount
-                                silentCount = 0
-                        else:
-                                silentCount += 1
-                elif silentCount != 0:
-                        silentCount = 0
-                        state.cmdCount = 0
-                        oldCount = 0
-                        print 'Pausing publication'
+            
+                # publish current position command to the simulator
+                jointState.position = state.qSet
+                jointState.header.stamp = rospy.Time.now()
+                cmdPub.publish(jointState)
 
 		# should not do any other thing
 		#print 'listening for new command'

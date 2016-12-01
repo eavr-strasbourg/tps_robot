@@ -2,15 +2,6 @@
 <launch>
 <param name="robot_description" textfile="$(find tps_robot)/urdf/turret.urdf" />
 
-<!-- Bridge node to transform high-level position and velocity commands to low-level position setpoints -->
-<node name="joint_control" pkg="tps_robot" type="arm_bridge.py"/>
-
-<!-- Tell the joint state publisher to listen to /joint_control/position -->
-<rosparam param="/source_list">[/joint_control/position] </rosparam>
-
-<!-- Simulator node -->
-	<param name="use_gui" value="True"/>
-	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true" />
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find tps_robot)/launch/config.rviz" />
+<!-- Launch common nodes -->
+<include file="$(find tps_robot)/launch/rviz.launch"/>
 </launch>

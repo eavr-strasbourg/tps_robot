@@ -602,13 +602,14 @@ Un exemple de syntaxe est donné dans \texttt{control.cpp}. Avant la boucle un p
 \end{itemize}
  Ce launchfile lance les nodes suivants :
 \begin{itemize}
-\item \texttt{/joint\_state\_publisher} : interface des sliders. Publie sur \texttt{/joint\_states} les positions articulaires correspondant aux sliders.
+\item \texttt{/joint\_state\_publisher} : interface des sliders. Publie sur \texttt{/joint\_state\_publisher/manual} les positions articulaires correspondant aux sliders.
 \item \texttt{/robot\_state\_publisher} : reçoit les positions articulaires. À l'aide du modèle géométrique du robot, publie sur \texttt{/tf} les  matrices de passage entre les différents éléments du robot.
 \item \texttt{/rviz} : reçoit les matrices de passage pour afficher la position actuelle du robot
-\item \texttt{/joint\_control} : simule la commande bas niveau du robot.
+\item \texttt{/joint\_state\_publisher/switch} : envoie au simulateur les positions manuelles ou bien celles qui viennent de la loi de commande
 \begin{itemize}
-\item Si ce node reçoit des consignes en position ou en vitesse sur \texttt{/mainControl/command}, il les transforme en suite de positions articulaires en prenant en compte les butées articulaires et les vitesses maximum. Ces positions sont publiées sur \texttt{/jointControl/position}. Ce topic prend la main sur les sliders de \texttt{/joint\_state\_publisher}.
-\item S'il ne reçoit rien, il ne publie rien.
+\item Si ce node reçoit des consignes en position ou en vitesse sur \texttt{/main\_control/command}, il les transforme en suite de positions articulaires en prenant en compte les butées articulaires et les vitesses maximum.
+Ces positions sont publiées sur \texttt{/joint\_states}. L'interface des sliders est alors inutilisable.
+\item S'il ne reçoit rien il transfère les consignes manuelles.
 \end{itemize}
 \end{itemize}
 \item La boucle est fermée à l'exécution du node de commande :

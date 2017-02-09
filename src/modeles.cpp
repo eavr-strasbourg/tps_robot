@@ -15,7 +15,7 @@ int Robot::compDK(const vpColVector &q, vpColVector &pose)
       
 
     }
-    else if(name_ == "scara")
+    else if(name_ == "rrrp")
     {
       
 
@@ -32,7 +32,7 @@ int Robot::compIK(const vpColVector &q0, const vpColVector &pose_des, vpColVecto
        
       
     }
-    else if(name_ == "scara")
+    else if(name_ == "rrrp")
     {
      
     }
@@ -47,7 +47,7 @@ int Robot::compJacobian(const vpColVector &q, vpMatrix &J)
     {
      
     }
-    else if(name_ == "scara")
+    else if(name_ == "rrrp")
     {
       
     }

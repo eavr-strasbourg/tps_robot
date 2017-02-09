@@ -1,8 +1,0 @@
-<!-- Launch file for Scara 4-DOF simulator -->
-<launch>
-<!-- Robot name as in controller -->
-<param name="robot_description" textfile="$(find tps_robot)/urdf/scara.urdf" />
-	
-<!-- Launch common nodes -->
-<include file="$(find tps_robot)/launch/rviz.launch"/>
-</launch>

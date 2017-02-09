@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="RRRP">
+<robot name="rrrp">
 <material name="matbase">
         <color rgba="1 1 1 1"/>
       </material>

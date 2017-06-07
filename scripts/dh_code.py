@@ -51,11 +51,12 @@ class Bunch(object):
     def __init__(self, adict):
         self.__dict__.update(adict)
 
-def load_yaml(filecontent):
+def load_yaml(filename):
     '''
     Loads the given yaml file content with DH parameters. Builds the corresponding data.
     '''
-    robot = yaml.load(filecontent)
+    with file(filename) as f:
+        robot = yaml.load(f)
     robot['keys'] = [k for k in robot]
     robot = Bunch(robot)  
 

@@ -19,10 +19,10 @@ Robot::Robot(ros::NodeHandle &_nh)
 
     // init joints
     v_max_.clear();
-    boost::shared_ptr<urdf::Joint> joint;
+    urdf::JointSharedPtr joint;
     n_ = 0;
     cmd_.name.clear();
-    for (std::map<std::string,boost::shared_ptr<urdf::Joint> >::iterator joint_it = model.joints_.begin();joint_it != model.joints_.end(); joint_it++)
+    for (std::map<std::string,urdf::JointSharedPtr >::iterator joint_it = model.joints_.begin();joint_it != model.joints_.end(); joint_it++)
     {
         joint = joint_it->second;
         if(joint->type != urdf::Joint::FIXED)

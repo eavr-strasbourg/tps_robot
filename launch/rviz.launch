@@ -1,6 +1,6 @@
 <launch>
 <!-- Bridge node to transform high-level position and velocity commands to low-level position setpoints -->
-<node name="switch" pkg="tps_robot" type="arm_bridge.py" ns="joint_state_publisher" output="screen"/>
+<node name="simulator" pkg="tps_robot" type="arm_bridge.py" output="screen"/>
 
 <!-- Simulator node -->
 	<param name="use_gui" value="True"/>

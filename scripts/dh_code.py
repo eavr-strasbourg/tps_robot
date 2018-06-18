@@ -130,13 +130,16 @@ def load_urdf(filename):
         with open(filename) as f:
             return f.read()
     else:
-        return getoutput('rosrun xacro xacro --inorder ' + filename)
+        urdf = getoutput('rosrun xacro xacro --inorder ' + filename)
+        if urdf[0] == 'w':
+            return getoutput('rosrun xacro xacro ' + filename)
+        return urdf
         
 def parse_urdf(filename, base_frame, ee_frame, use_joint_names = False):
     '''
     Parse the URDF file to extract the geometrical parameters between given frames
     '''
-    robot = etree.parse(filename)
+    robot = etree.fromstring(load_urdf(filename))
         
     # find all joints
     parents = []
@@ -144,7 +147,16 @@ def parse_urdf(filename, base_frame, ee_frame, use_joint_names = False):
     all_joints = robot.findall('joint')
     for joint in all_joints:
         parents.append(joint.find('parent').get('link'))
-        children.append(joint.find('child').get('link'))        
+        children.append(joint.find('child').get('link'))
+        
+    if base_frame not in parents:
+        print 'Could not find', base_frame, 'in parent link list'
+        print('Known parents: ' + " ".join(set(parents)))
+        sys.exit(0)
+    if ee_frame not in children:
+        print 'Could not find', ee_frame, 'in children link list'
+        print('Known children: ' + " ".join(set(children)))
+        sys.exit(0)
     # find path from base link to effector link
     joint_path = []
     cur_link = ee_frame
@@ -152,7 +164,7 @@ def parse_urdf(filename, base_frame, ee_frame, use_joint_names = False):
         try:
             i = children.index(cur_link)
         except:
-            print 'Could not find', cur_link, 'in joint list'
+            print 'Could not find', cur_link, 'in link list'
             sys.exit(0)
         
         if i in joint_path:
@@ -235,8 +247,24 @@ def simp_matrix(M):
     simplify matrix for old versions of sympy
     '''
     for i in xrange(M.rows):
-        for j in xrange(M.cols):
-            M[i,j] = sympy.simplify(M[i,j])
+        for j in xrange(M.cols):       
+            M[i,j] = sympy.trigsimp(M[i,j])
+            # check for these strange small numbers
+            s = str(M[i,j])
+            almost0 = False
+            for k in range(30, 50):
+                if 'e-' + str(k) in s:
+                    almost0 = True
+                    break
+            if almost0:
+                for k in range(30, 50):
+                    while 'e-' + str(k) in s:
+                        m = s.find('e-' + str(k))
+                        n = m
+                        while s[n] != '.':
+                            n -= 1
+                        s = s.replace(s[n-1:m+4], '0')
+                M[i,j] = sympy.trigsimp(parse_expr(s))
     return M    
 
 def compute_Ji(joint_prism, u0, p0, i):
@@ -256,7 +284,7 @@ def compute_Ji(joint_prism, u0, p0, i):
     #return Jv.col_join(Jw)
 
 
-def replaceFctQ(s, cDef, cUse, q = 'q_'):
+def replaceFctQ(s, cDef, cUse, q = 'q'):
     '''
     Replace cos and sin functions of q_i with precomputed constants
     '''
@@ -296,7 +324,7 @@ def replaceFctQ(s, cDef, cUse, q = 'q_'):
         s = s.replace('q%i' % (i+1), '%s[%i]' % (q, i))
     return s.replace('00000000000000', '').replace('0000000000000', ''), cDef, cUse
 
-def exportCpp(M, s='M', q = 'q_', col_offset = 0):
+def exportCpp(M, s='M', q = 'q', col_offset = 0):
         '''
         Writes the C++ code corresponding to a given matrix
         '''
@@ -363,22 +391,27 @@ def ComputeDK_J(T, u, prism, comp_all = False):
         p0 = [T0[i][:3,3] for i in xrange(ee)]
                     
         # build Jacobian
-        pool = Pool()
-        results = []
-        for i in xrange(ee):
-            # add this column to pool
-            results.append(pool.apply_async(compute_Ji, args=(prism, u0, p0, i)))
+        # Sympy + multithreading bug = argument is not an mpz
+        #pool = Pool()
+        #results = []
+        #for i in xrange(ee):
+            ## add this column to pool
+            #results.append(pool.apply_async(compute_Ji, args=(prism, u0, p0, i)))
+        #iJ = [result.get() for result in results]
+        #pool.close()  
+        
+        iJ = [compute_Ji(prism, u0, p0, i) for i in xrange(ee)]
 
         Js = sympy.Matrix()
         Js.rows = 6
-        iJ = [result.get() for result in results]
+
         for i in xrange(ee):
             for iJi in iJ:
                 if iJi[0] == i:
                     Js = Js.row_join(iJi[1])
         all_J.append(Js)
     print ''
-    pool.close()    
+  
     return T0, all_J
         
     

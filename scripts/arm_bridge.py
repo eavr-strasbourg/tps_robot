@@ -174,7 +174,7 @@ if __name__ == '__main__':
         rospy.Subscriber('/main_control/command', JointState, state.readBridgeCommand)
         
         # subscribe to manual position setpoints
-        rospy.Subscriber('manual', JointState, state.readManualCommand)
+        rospy.Subscriber('/joint_state_publisher/manual', JointState, state.readManualCommand)
                 
         # publish position command depending on the simulator type
         cmdPub = rospy.Publisher('/joint_states', JointState, queue_size = 1)

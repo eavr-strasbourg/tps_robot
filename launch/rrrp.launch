@@ -1,7 +1,7 @@
-<!-- Launch file for Scara 4-DOF simulator -->
+<!-- Launch file for RRRP robot simulator -->
 <launch>
 <!-- Robot name as in controller -->
-<param name="robot_description" textfile="$(find tps_robot)/urdf/scara.urdf" />
+<param name="robot_description" textfile="$(find tps_robot)/urdf/rrrp.urdf" />
 	
 <!-- Launch common nodes -->
 <include file="$(find tps_robot)/launch/rviz.launch"/>
